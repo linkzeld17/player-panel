@@ -1,0 +1,36 @@
+# Do not store passwords in this file.
+INSTALL_ROOT=/opt/player-panel
+CRAFTY_CONTAINER=crafty-controller
+CRAFTY_ROOT=/opt/crafty
+CRAFTY_IMAGE=arcadiatechnology/crafty-4:latest
+CRAFTY_HTTPS_PORT=8443
+CRAFTY_MC_PORT=25565
+CRAFTY_BEDROCK_PORT=19132
+CRAFTY_BLUEMAP_PORT=8100
+CRAFTY_PLAYER_PANEL_PORT=8765
+CRAFTY_SQUAREMAP_PORT=8110
+INSTALL_CRAFTY=false
+SKIP_CRAFTY=false
+SERVER_ID=
+PLUGIN_PORT=
+WEB_PORT=8766
+BIND_ADDRESS=0.0.0.0
+WEB_ACCESS_MODE=direct
+WEB_CONTAINER=player-panel-web
+NETWORK=player-panel-net
+# Empty = detect the host time zone automatically.
+TIMEZONE=
+PUBLIC_URL=
+VAPID_SUBJECT=mailto:admin@example.com
+CRAFTY_PANEL_URL=
+CRAFTY_USERNAME=
+SKIP_FABRIC=false
+SKIP_WEB=false
+# true = do not detect, download, or configure BlueMap/squaremap.
+SKIP_MAPS=false
+SKIP_PLUGIN_WAIT=false
+# ask/false = do not accept automatically. true = explicit consent in non-interactive mode.
+BLUEMAP_ACCEPT_DOWNLOAD=ask
+
+# online, offline, or keep
+MINECRAFT_AUTH_MODE=keep

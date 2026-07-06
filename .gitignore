@@ -1,0 +1,39 @@
+# Runtime configuration and secrets
+.env
+*.env
+secrets/
+data/
+update-backups/
+player-panel-backups/
+install-report.txt
+default-creds.txt
+
+# Databases and backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+*.tar
+*.tar.gz
+
+# Generated release artifacts
+dist/
+*.zip
+CHECKSUMS.local.sha256
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

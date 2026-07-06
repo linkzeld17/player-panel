@@ -1,0 +1,131 @@
+{
+  "name": "player-panel",
+  "release": "1.0.0-beta.1",
+  "stage": "beta",
+  "releaseDate": "2026-07-06",
+  "components": {
+    "web": {
+      "version": "1.10.19",
+      "path": "components/web"
+    },
+    "fabric": {
+      "version": "1.1.7",
+      "minecraft": "26.1.2",
+      "path": "components/fabric/player-panel-1.1.7-fabric26.1.2.jar",
+      "requiresFabricApi": ">=0.153.0"
+    },
+    "fabricApiDownload": {
+      "included": false,
+      "version": "0.153.0+26.1.2",
+      "minimumVersion": "0.153.0",
+      "optional": false,
+      "metadataId": "fabric-api",
+      "sha256Verified": true
+    },
+    "squareMapDownload": {
+      "included": false,
+      "version": "1.3.13",
+      "minecraft": "26.1.2",
+      "optional": true,
+      "metadataId": "squaremap",
+      "sha256Verified": true
+    },
+    "blueMapDownload": {
+      "included": false,
+      "version": "5.20",
+      "minecraft": "26.1.2",
+      "optional": true,
+      "metadataId": "bluemap",
+      "assetConsentRequired": true
+    },
+    "blueMapBridge": {
+      "version": "6",
+      "path": "integrations/bluemap/player-panel-bluemap-bridge-v6.js"
+    },
+    "squareMapBridge": {
+      "version": "7",
+      "path": "integrations/squaremap/player-panel-squaremap-bridge-v7.js"
+    }
+  },
+  "installer": {
+    "interactive": true,
+    "nonInteractive": true,
+    "cleanInstall": true,
+    "rollbackBackup": true,
+    "secretRedaction": true,
+    "mockTest": true,
+    "fabricJarMetadataDetection": true,
+    "renamedJarDetection": true,
+    "fabricApiDependencyInstall": true,
+    "optionalMapModInstall": true,
+    "blueMapAssetConsentAfterFirstStart": true,
+    "blueMapConsentNotImpliedByAssumeYes": true,
+    "hostTimezoneAutoDetect": true,
+    "craftyPullRetries": 1,
+    "resumeIncompleteCraftyInstall": true,
+    "craftyRegistryFallback": false,
+    "craftyVersionPinned": false,
+    "guided": true,
+    "dockerAutoInstall": true,
+    "dockerOfficialRepository": true,
+    "craftyDetectionPrompt": true,
+    "craftyInstallPrompt": true,
+    "craftyImage": "arcadiatechnology/crafty-4:latest",
+    "composeTemplate": "user-requested-single-server",
+    "dockerNativePullProgress": true,
+    "showCraftyDefaultCredentialsInteractive": true,
+    "hideCraftyDefaultCredentialsNonInteractive": true,
+    "minecraftAuthModePrompt": true,
+    "minecraftWhitelistEnforced": true,
+    "offlineUuidRepair": true,
+    "offlineUuidCaseSensitive": true,
+    "existingInstallRepairScript": "repair-server.sh",
+    "blueMapOwnershipRepair": true,
+    "mapBridgeCraftyOwnership": true,
+    "isolatedConnectionCardSaves": true,
+    "mapUrlValidationRegressionTest": true,
+    "unrelatedConnectionValidationIsolation": true,
+    "trustedProxyHeaders": true,
+    "trustedProxyCidrs": true,
+    "dockerNetworkCidrDiscovery": true,
+    "existingSessionIpRefresh": true,
+    "proxyIpRegressionTest": true,
+    "craftyDatabaseServerDetection": true,
+    "craftyExecutableServerDetection": true,
+    "unknownFabricConfirmation": true,
+    "serverRedetectionOption": true,
+    "shortYesAccepted": true,
+    "unknownServerRegressionTest": true,
+    "webAccessModePrompt": false,
+    "proxyLoopbackMode": true,
+    "defaultExternalWebBind": true,
+    "hostIpv4AutoDetection": true,
+    "craftyExternalBindExplicit": true,
+    "localFirewallAutoOpen": true,
+    "directIpMode": true,
+    "directModeDisablesTrustedProxyHeaders": false,
+    "existingWebAccessConfigurator": "configure-web-access.sh",
+    "webOnlyUpdater": "update-web.sh",
+    "squareMapCenteredThumbnails": true,
+    "webAccessModeRegressionTest": true,
+    "autoLinkFreshCraftyCredentials": true
+  },
+  "compatibility": {
+    "minecraft": "26.1.2",
+    "fabric": true,
+    "java": ">=25",
+    "craftyController": "4.x",
+    "dockerCompose": "v2",
+    "architectures": [
+      "arm64",
+      "amd64"
+    ]
+  },
+  "cleanCraftyProvisioning": true,
+  "craftyImage": "arcadiatechnology/crafty-4:latest",
+  "webFeatures": {
+    "craftyInstallationsView": true,
+    "compactMobilePlaceCoordinates": true,
+    "androidTouchScrollFix": true
+  }
+}
