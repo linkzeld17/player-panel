@@ -49,10 +49,24 @@ Choose the path that matches your deployment:
 
 Use this when Crafty and the Minecraft server are on the same machine, or when you want the installer to create a new Crafty deployment.
 
+Download the official `v1.0.0-beta.1` release archive, extract it, and start the guided installer:
+
 ```bash
+VERSION="1.0.0-beta.1"
+REPOSITORY="linkzeld17/player-panel"
+
+cd /tmp
+curl -fL \
+  "https://github.com/${REPOSITORY}/archive/refs/tags/v${VERSION}.tar.gz" \
+  -o "player-panel-${VERSION}.tar.gz"
+
+tar -xzf "player-panel-${VERSION}.tar.gz"
+cd "player-panel-${VERSION}"
 chmod +x install.sh
 ./install.sh
 ```
+
+Replace `YOUR_GITHUB_USERNAME` with the GitHub account or organization that owns the repository.
 
 The installer can:
 
@@ -70,10 +84,24 @@ See [Full installation](docs/INSTALL_FULL.md).
 
 Use this when Crafty/Minecraft run on another server, or when you want to connect everything manually from the web UI.
 
+Download the official `v1.0.0-beta.1` release archive, extract it, and start the web-only installer:
+
 ```bash
+VERSION="1.0.0-beta.1"
+REPOSITORY="linkzeld17/player-panel"
+
+cd /tmp
+curl -fL \
+  "https://github.com/${REPOSITORY}/archive/refs/tags/v${VERSION}.tar.gz" \
+  -o "player-panel-${VERSION}.tar.gz"
+
+tar -xzf "player-panel-${VERSION}.tar.gz"
+cd "player-panel-${VERSION}"
 chmod +x install-panel-only.sh
 ./install-panel-only.sh
 ```
+
+Replace `YOUR_GITHUB_USERNAME` with the GitHub account or organization that owns the repository.
 
 The installer offers three clear starting modes:
 
@@ -89,6 +117,7 @@ See [Web-only installation](docs/INSTALL_WEB_ONLY.md) and [Remote connections](d
 
 - Linux server; Ubuntu 22.04/24.04 or Debian 12 recommended.
 - `root` access or a user with `sudo`.
+- `curl` and `tar` to download and extract the release archive.
 - Docker Engine and Docker Compose v2, or permission for the installer to install them.
 - For the full path: Crafty Controller and a Minecraft Java Fabric 26.1.2 server.
 - At least 10 characters for the initial Player Panel administrator password.
