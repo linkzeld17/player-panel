@@ -1,0 +1,1378 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta id="themeColorMeta" name="theme-color" content="#111827">
+  <meta name="application-name" content="Player Panel">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Player Panel">
+  <title>Player Panel</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem('player-panel-theme');
+        const preference = ['auto', 'light', 'dark'].includes(stored) ? stored : 'auto';
+        const resolved = preference === 'auto'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preference;
+        document.documentElement.dataset.themePreference = preference;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.style.colorScheme = resolved;
+      } catch (_) {
+        document.documentElement.dataset.themePreference = 'auto';
+        document.documentElement.dataset.theme = 'dark';
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css?v=1.10.19">
+</head>
+<body>
+  <div id="loginView" class="login-shell">
+    <form id="loginForm" class="login-card">
+      <img class="login-logo" src="/favicon.svg" alt="">
+      <h1>Player Panel</h1>
+      <p>Private server administration</p>
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" maxlength="32" required autofocus value="admin">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <div id="otpWrap" class="hidden"><label for="otp">Authentication code</label><input id="otp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"></div>
+      <button class="primary wide" type="submit">Entrar</button>
+      <div id="loginError" class="error-text" role="alert"></div>
+    </form>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <header class="topbar">
+      <div class="brand-block">
+        <img class="brand-icon" src="/favicon.svg" alt="">
+        <div>
+          <h1>Player Panel</h1>
+          <div id="serverSubtitle" class="muted">Conectando...</div>
+        </div>
+      </div>
+      <div id="serverSwitcher" class="server-switcher" title="Active server">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v5H4zM4 13.5h16v5H4z"/><circle cx="7" cy="8" r="1"/><circle cx="7" cy="16" r="1"/></svg>
+        <select id="serverSelector" aria-label="Active server"></select>
+      </div>
+      <nav class="main-nav" aria-label="Secciones">
+        <button class="nav-btn active" data-view="dashboard" type="button">Dashboard</button>
+        <div class="nav-menu" data-nav-group="server">
+          <button class="nav-btn nav-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="serverDesktopMenu">
+            Server <span class="nav-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="serverDesktopMenu" class="nav-dropdown" role="menu">
+            <button class="nav-dropdown-item nav-btn" data-view="players" type="button" role="menuitem"><span>Players</span><small>Online players, whitelist, and inventory</small></button>
+            <button class="nav-dropdown-item nav-btn" data-view="places" type="button" role="menuitem"><span>Teleport Locations</span><small>Saved coordinates and destinations</small></button>
+            <button class="nav-dropdown-item nav-btn hidden" data-view="bluemap" data-bluemap-nav type="button" role="menuitem"><span>BlueMap</span><small>Server web map</small></button>
+            <button class="nav-dropdown-item nav-btn hidden" data-view="server" data-crafty-nav type="button" role="menuitem"><span>Management & Status</span><small>Control, console, and metrics</small></button>
+          </div>
+        </div>
+        <div class="nav-menu" data-nav-group="system">
+          <button class="nav-btn nav-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="systemDesktopMenu">
+            System <span class="nav-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="systemDesktopMenu" class="nav-dropdown nav-dropdown-right" role="menu">
+            <button class="nav-dropdown-item nav-btn system-settings-nav" data-view="servers" type="button" role="menuitem"><span>Servers</span><small>Add, edit, and switch profiles</small></button>
+            <button class="nav-dropdown-item nav-btn system-settings-nav" data-view="crafty-connections" type="button" role="menuitem"><span>Crafty Installations</span><small>Credentials, API, and discovery</small></button>
+            <button class="nav-dropdown-item nav-btn" data-view="users" type="button" role="menuitem"><span>Accounts</span><small>Profile, sessions, and users</small></button>
+            <button class="nav-dropdown-item nav-btn system-settings-nav" data-view="system" type="button" role="menuitem"><span>System Settings</span><small>Maintenance, backups, and environment</small></button>
+            <button class="nav-dropdown-item nav-btn" data-view="history" type="button" role="menuitem"><span>History / Log</span><small>Recorded actions and sessions</small></button>
+          </div>
+        </div>
+      </nav>
+      <div class="top-actions">
+        <div class="current-user"><strong id="currentUserName">—</strong><small id="currentUserRole">—</small></div>
+        <div class="status-cluster" role="group" aria-label="Server status and live updates">
+          <span id="apiStatus" class="status-pill compact-status server-status-compact offline" role="status" aria-label="Server status" title="Minecraft server status">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/><path d="M8 7h.01M8 17h.01M12 7h5M12 17h5"/></svg>
+            <span class="visually-hidden compact-status-label">Server</span>
+          </span>
+          <span class="status-cluster-divider" aria-hidden="true"></span>
+          <span id="liveStatus" class="status-pill compact-status live-status-compact syncing" role="status" aria-label="Connecting live updates" title="Connecting the real-time update channel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 0 1 14 0"/><path d="M8 12a4 4 0 0 1 8 0"/><path d="M11 12a1 1 0 0 1 2 0"/><circle cx="12" cy="17" r="1.5"/></svg>
+            <span class="visually-hidden compact-status-label">Conectando</span>
+          </span>
+        </div>
+        <div id="themePicker" class="theme-picker" title="Change theme">
+          <button id="themeMenuButton" class="theme-menu-button theme-menu-icon-button" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Change theme">
+            <svg class="theme-main-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.7-.1-1.4-.2-2.1A7 7 0 0 1 12 3Z"/><path d="M12 3v18"/></svg>
+            <span id="themeMenuLabel" class="theme-menu-label-hidden">Auto</span>
+          </button>
+          <div id="themeMenu" class="theme-menu hidden" role="listbox" aria-label="Theme visual">
+            <button type="button" role="option" data-theme-choice="auto"><span>Auto</span><small>Use the system theme</small></button>
+            <button type="button" role="option" data-theme-choice="dark"><span>Oscuro</span><small>Interfaz oscura</small></button>
+            <button type="button" role="option" data-theme-choice="light"><span>Claro</span><small>Interfaz clara</small></button>
+          </div>
+        </div>
+        <button id="installAppBtn" class="ghost install-app-btn top-icon-btn hidden" type="button" aria-label="Install application" title="Install application">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 17.5h14"/><path d="M7 21h10"/></svg>
+          <span class="visually-hidden">Install</span>
+        </button>
+        <button id="refreshBtn" class="secondary top-icon-btn" type="button" aria-label="Refresh" title="Refresh">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.9 9A7 7 0 0 1 18 7.6L20 11"/><path d="M17.1 15A7 7 0 0 1 6 16.4L4 13"/></svg>
+          <span class="visually-hidden">Refresh</span>
+        </button>
+        <button id="logoutBtn" class="ghost top-icon-btn" type="button" aria-label="Sign out" title="Sign out">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          <span class="visually-hidden">Sign out</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section id="dashboardView" class="view-section">
+        <section class="dashboard-editor-toolbar" aria-label="Dashboard card customization">
+          <button id="editDashboardBtn" class="ghost dashboard-edit-toggle" type="button" title="Edit, move, hide, or resize cards">
+            <span class="dashboard-edit-icon" aria-hidden="true">✎</span><span>Edit cards</span>
+          </button>
+          <div id="dashboardEditControls" class="dashboard-edit-controls hidden">
+            <small id="dashboardLayoutHint">Drag on desktop or use the arrows and size button.</small>
+            <button id="resetDashboardBtn" class="ghost" type="button">Restablecer</button>
+            <button id="cancelDashboardBtn" class="ghost" type="button">Cancel</button>
+            <button id="saveDashboardBtn" class="primary" type="button">Save</button>
+          </div>
+        </section>
+
+        <section id="dashboardHiddenPanel" class="dashboard-hidden-panel hidden" aria-live="polite">
+          <div>
+            <strong>Tarjetas ocultas</strong>
+            <small>Select a card to show it again.</small>
+          </div>
+          <div id="dashboardHiddenWidgets" class="dashboard-hidden-list"></div>
+        </section>
+
+        <section id="dashboardCanvas" class="dashboard-canvas">
+          <section class="world-module dashboard-widget dashboard-widget-world" data-dashboard-widget="world" data-dashboard-title="World Status" aria-label="World status and controls">
+            <div id="worldScene" class="world-scene phase-day weather-clear">
+              <div class="sky-visual" aria-hidden="true">
+                <div class="stars"></div>
+                <div id="celestial" class="celestial sun"></div>
+                <div class="cloud cloud-one"></div>
+                <div class="cloud cloud-two"></div>
+                <div class="rain-layer"></div>
+                <div class="lightning-layer"></div>
+                <div class="horizon horizon-back"></div>
+                <div class="horizon horizon-front"></div>
+              </div>
+              <div class="world-scene-content">
+                <div class="world-summary">
+                  <span class="eyebrow">World Status</span>
+                  <h2 id="worldSceneTitle">Loading world...</h2>
+                  <p id="worldSceneMeta">Synchronizing time and weather</p>
+                </div>
+              </div>
+            </div>
+            <div class="world-control-dock">
+              <div class="world-controls">
+                <label class="control-field world-select-field"><span>World</span><select id="worldControlSelect"></select></label>
+                <div class="quick-time-buttons">
+                  <button id="setDayBtn" class="scene-button sun-button" type="button">☀ Day</button>
+                  <button id="setNightBtn" class="scene-button moon-button" type="button">☾ Night</button>
+                </div>
+                <div class="control-pair">
+                  <label class="control-field"><span>Time</span><select id="timePresetSelect">
+                    <option value="DAWN">Dawn</option><option value="DAY">Day</option><option value="NOON">Noon</option>
+                    <option value="DUSK">Atardecer</option><option value="NIGHT">Night</option><option value="MIDNIGHT">Medianoche</option>
+                  </select></label>
+                  <button id="applyTimeBtn" class="scene-button compact-apply-button" type="button" aria-label="Apply hora" title="Apply hora">Apply</button>
+                </div>
+                <div class="control-pair">
+                  <label class="control-field"><span>Weather</span><select id="weatherSelect">
+                    <option value="CLEAR">Clear</option><option value="RAIN">Rain</option><option value="THUNDER">Thunder</option>
+                  </select></label>
+                  <button id="applyWeatherBtn" class="scene-button compact-apply-button" type="button" aria-label="Apply weather" title="Apply weather">Apply</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <article class="summary-card dashboard-widget dashboard-widget-stat" data-dashboard-widget="online" data-dashboard-title="Online"><span>Online</span><strong id="dashOnline">0</strong><small id="dashCapacity">of 0</small></article>
+          <article class="summary-card dashboard-widget dashboard-widget-stat" data-dashboard-widget="unread-alerts" data-dashboard-title="Active alerts"><span>Active alerts</span><strong id="dashAlerts">0</strong><small>unread</small></article>
+          <article class="summary-card warning-card dashboard-widget dashboard-widget-stat" data-dashboard-widget="attention" data-dashboard-title="Needs attention"><span>Needs attention</span><strong id="dashAttention">0</strong><small>comida baja</small></article>
+          <article class="summary-card dashboard-widget dashboard-widget-stat" data-dashboard-widget="sessions" data-dashboard-title="Sessions today"><span>Sessions today</span><strong id="dashSessions">0</strong><small id="dashDeaths">0 deaths</small></article>
+          <article class="summary-card dashboard-widget dashboard-widget-stat" data-dashboard-widget="actions" data-dashboard-title="Actions today"><span>Actions today</span><strong id="dashActions">0</strong><small>from this panel</small></article>
+          <article id="dashMetricsCard" class="summary-card metrics-state-card dashboard-widget dashboard-widget-stat" data-dashboard-widget="plugin-metrics" data-dashboard-title="Plugin metrics"><span>Plugin metrics</span><strong id="dashMetricsState">—</strong><small id="dashMetricsMeta">Checking status</small></article>
+
+          <article class="summary-card dashboard-widget dashboard-widget-stat dashboard-user-hidden dashboard-optional-widget" data-dashboard-widget="cpu" data-dashboard-title="CPU"><span>CPU</span><strong id="dashCpu">—</strong><small id="dashCpuMeta">Waiting for sample</small></article>
+          <article class="summary-card dashboard-widget dashboard-widget-stat dashboard-user-hidden dashboard-optional-widget" data-dashboard-widget="memory" data-dashboard-title="RAM"><span>RAM</span><strong id="dashMemory">—</strong><small id="dashMemoryMeta">Waiting for sample</small></article>
+          <article class="summary-card dashboard-widget dashboard-widget-stat dashboard-user-hidden dashboard-optional-widget" data-dashboard-widget="tps" data-dashboard-title="TPS"><span>TPS</span><strong id="dashTps">—</strong><small id="dashTpsMeta">Waiting for sample</small></article>
+          <article class="summary-card dashboard-widget dashboard-widget-stat dashboard-user-hidden dashboard-optional-widget" data-dashboard-widget="uptime" data-dashboard-title="Uptime hours"><span>Uptime hours</span><strong id="dashUptime">—</strong><small id="dashUptimeMeta">Server uptime</small></article>
+
+          <article class="panel dashboard-card alerts-card dashboard-widget dashboard-widget-panel" data-dashboard-widget="alerts" data-dashboard-title="Alerts">
+            <div class="section-title">
+              <div><h2>Alerts</h2><small>Connections, deaths, and notices</small></div>
+              <div class="mini-actions">
+                <label class="switch-label"><input id="soundAlerts" type="checkbox"> Sound</label>
+                <button id="enableNotificationsBtn" class="ghost small-btn">Notifications</button>
+                <button id="markAlertsReadBtn" class="ghost small-btn">Mark as read</button>
+              </div>
+            </div>
+            <div id="alertsList" class="timeline-list"></div>
+            <div id="emptyAlerts" class="empty compact">No recent alerts.</div>
+          </article>
+
+          <article class="panel dashboard-card dashboard-players-card dashboard-widget dashboard-widget-panel" data-dashboard-widget="online-players" data-dashboard-title="Online players">
+            <div class="section-title"><div><h2>Online players</h2><small id="dashboardOnlinePlayersCount">0 online</small></div></div>
+            <div id="dashboardOnlinePlayers" class="dashboard-player-list"></div>
+            <div id="emptyDashboardOnlinePlayers" class="empty compact">No players are online.</div>
+          </article>
+
+          <article class="panel dashboard-card dashboard-widget dashboard-widget-panel dashboard-user-hidden" data-dashboard-widget="recent-sessions" data-dashboard-title="Actividad reciente">
+            <div class="section-title"><div><h2>Actividad reciente</h2><small>Sessions recorded by the panel</small></div></div>
+            <div id="recentSessions" class="timeline-list"></div>
+            <div id="emptySessions" class="empty compact">No sessions have been recorded yet.</div>
+          </article>
+
+        </section>
+      </section>
+
+      <section id="serverView" class="view-section hidden">
+        <div class="server-page">
+          <article class="panel server-hero-panel">
+            <div class="server-hero-copy">
+              <span class="eyebrow">Crafty Controller</span>
+              <div class="server-title-row">
+                <h2 id="craftyServerName">Minecraft Server</h2>
+                <span id="craftyProcessState" class="process-pill unknown">Checking</span>
+              </div>
+              <p id="craftyServerDescription" class="muted">Connecting to Crafty...</p>
+              <small id="craftyLastUpdate" class="muted">Not refreshed</small>
+            </div>
+            <div class="server-command-bar">
+              <button id="serverStartBtn" class="server-action start" type="button">▶ Iniciar</button>
+              <button id="serverRestartBtn" class="server-action restart" type="button">↻ Reiniciar</button>
+              <button id="serverStopBtn" class="server-action stop" type="button">■ Detener</button>
+              <button id="serverBackupBtn" class="server-action backup" type="button">⬇ Create backup</button>
+              <button id="refreshCraftyBtn" class="ghost" type="button">Refresh</button>
+            </div>
+          </article>
+
+          <section class="server-metrics-grid">
+            <article class="server-metric-card"><span>CPU</span><strong id="serverCpu">—</strong><small>Proceso Minecraft</small></article>
+            <article class="server-metric-card"><span>Memory</span><strong id="serverRam">—</strong><small id="serverRamPercent">—</small></article>
+            <article class="server-metric-card"><span>Uptime</span><strong id="serverUptime">—</strong><small id="serverStarted">—</small></article>
+            <article class="server-metric-card"><span>Players</span><strong id="serverPlayers">—</strong><small>Online / maximum</small></article>
+            <article class="server-metric-card"><span>Version</span><strong id="serverVersion">—</strong><small id="serverWorldSize">—</small></article>
+            <article class="server-metric-card"><span>Port</span><strong id="serverPort">—</strong><small id="serverAddress">Internal Crafty</small></article>
+          </section>
+
+          <section class="server-detail-grid">
+            <article class="panel console-card">
+              <div class="section-title">
+                <div><h2>Consola reciente</h2><small>Crafty output, read-only</small></div>
+                <div class="mini-actions">
+                  <label class="switch-label"><input id="autoScrollCrafty" type="checkbox" checked> Auto-scroll</label>
+                  <button id="refreshCraftyLogsBtn" class="ghost small-btn" type="button">Refresh</button>
+                </div>
+              </div>
+              <pre id="craftyLogs" class="crafty-console">Waiting for logs...</pre>
+            </article>
+
+            <article class="panel backups-card">
+              <div class="section-title">
+                <div><h2>Backups</h2><small>Configurations managed by Crafty</small></div>
+                <button id="refreshCraftyBackupsBtn" class="ghost small-btn" type="button">Refresh</button>
+              </div>
+              <div id="craftyBackups" class="backup-list"></div>
+              <div id="emptyCraftyBackups" class="empty compact">No backup configurations are available.</div>
+              <a id="craftyOpenServerLink" class="button-link ghost hidden" target="_blank" rel="noopener">Open in Crafty</a>
+            </article>
+          </section>
+
+          <section id="serverMetricsSection" class="server-history-section">
+            <article class="panel server-metrics-header">
+              <div>
+                <span class="eyebrow">History and availability</span>
+                <h2>Metrics</h2>
+                <p class="muted">CPU, memory, players, and availability recorded by Player Panel.</p>
+              </div>
+              <div class="metrics-header-actions">
+                <div id="metricsRuntimeBox" class="metrics-runtime-status unknown" aria-live="polite">
+                  <span>Plugin status</span>
+                  <strong id="metricsRuntimeState">Checking</strong>
+                  <small id="metricsRuntimeMeta">Waiting for Fabric data</small>
+                </div>
+                <div class="metrics-toolbar">
+                <label><span>Period</span><select id="metricsRange">
+                  <option value="1">Last hour</option><option value="6">6 horas</option><option value="24" selected>24 horas</option>
+                  <option value="168">7 days</option><option value="720">30 days</option>
+                </select></label>
+                <button id="refreshMetricsBtn" class="secondary" type="button">Refresh</button>
+                </div>
+              </div>
+            </article>
+
+            <section class="metrics-summary-grid compact-metrics-summary">
+              <article class="server-metric-card metric-summary-card"><span>CPU promedio</span><strong id="metricsAvgCpu">—</strong><small id="metricsMaxCpu">Maximum —</small></article>
+              <article class="server-metric-card metric-summary-card"><span>Memoria promedio</span><strong id="metricsAvgMemory">—</strong><small id="metricsMaxMemory">Maximum —</small></article>
+              <article class="server-metric-card metric-summary-card"><span>TPS promedio</span><strong id="metricsAvgTps">—</strong><small id="metricsMinTps">Minimum —</small></article>
+              <article class="server-metric-card metric-summary-card"><span>Almacenamiento</span><strong id="metricsStorage">—</strong><small id="metricsStorageFree">Libre —</small></article>
+              <article class="server-metric-card metric-summary-card"><span>Average players</span><strong id="metricsAvgPlayers">—</strong><small id="metricsPeakPlayers">Pico —</small></article>
+              <article class="server-metric-card metric-summary-card"><span>Server availability</span><strong id="metricsServerAvailability">—</strong><small>Running samples</small></article>
+              <article class="server-metric-card metric-summary-card"><span>API availability</span><strong id="metricsApiAvailability">—</strong><small>Plugin connection</small></article>
+              <article class="server-metric-card metric-summary-card"><span>Muestras</span><strong id="metricsSamples">0</strong><small id="metricsRetention">30-day retention</small></article>
+            </section>
+
+            <section class="metrics-chart-grid compact-metrics-charts">
+              <article class="panel metric-chart-card">
+                <div class="section-title"><div><h2>CPU</h2><small>Minecraft process</small></div><span class="chart-unit">%</span></div>
+                <div class="chart-shell"><svg id="cpuChart" class="metric-chart" viewBox="0 0 720 270" role="img" aria-label="CPU history"></svg><div id="cpuChartEmpty" class="chart-empty hidden">Not enough data yet.</div></div>
+              </article>
+              <article class="panel metric-chart-card">
+                <div class="section-title"><div><h2>Memory</h2><small>RAM used by Minecraft</small></div><span class="chart-unit">GiB</span></div>
+                <div class="chart-shell"><svg id="memoryChart" class="metric-chart" viewBox="0 0 720 270" role="img" aria-label="Memory history"></svg><div id="memoryChartEmpty" class="chart-empty hidden">Not enough data yet.</div></div>
+              </article>
+              <article class="panel metric-chart-card">
+                <div class="section-title"><div><h2>Players</h2><small>Online during the period</small></div><span class="chart-unit">Online</span></div>
+                <div class="chart-shell"><svg id="playersChart" class="metric-chart" viewBox="0 0 720 270" role="img" aria-label="Player history"></svg><div id="playersChartEmpty" class="chart-empty hidden">Not enough data yet.</div></div>
+              </article>
+            </section>
+
+            <details id="metricSettingsPanel" class="panel metric-settings-panel compact-settings-panel">
+              <summary>
+                <div><strong>Alert rules</strong><small>CPU, memory, TPS, storage, and prolonged outages</small></div>
+                <span>Configure</span>
+              </summary>
+              <div class="alert-rules-wrap">
+                <div class="alert-rules-grid">
+                  <article class="alert-rule-card">
+                    <label class="alert-rule-switch"><input id="metricCpuEnabled" type="checkbox"><span>CPU alta</span></label>
+                    <label><span>Alert at</span><div class="input-suffix"><input id="metricCpuThreshold" type="number" min="10" max="100" step="1"><b>%</b></div></label>
+                    <label><span>Duration</span><select id="metricCpuDuration">
+                      <option value="0">Inmediatamente</option><option value="60">1 minuto</option><option value="120">2 minutos</option><option value="300">5 minutos</option><option value="600">10 minutos</option>
+                    </select></label>
+                  </article>
+                  <article class="alert-rule-card">
+                    <label class="alert-rule-switch"><input id="metricMemoryEnabled" type="checkbox"><span>Memoria alta</span></label>
+                    <label><span>Alert at</span><div class="input-suffix"><input id="metricMemoryThreshold" type="number" min="10" max="100" step="1"><b>%</b></div></label>
+                    <label><span>Duration</span><select id="metricMemoryDuration">
+                      <option value="0">Inmediatamente</option><option value="60">1 minuto</option><option value="120">2 minutos</option><option value="300">5 minutos</option><option value="600">10 minutos</option>
+                    </select></label>
+                  </article>
+                  <article class="alert-rule-card">
+                    <label class="alert-rule-switch"><input id="metricTpsEnabled" type="checkbox"><span>TPS bajo</span></label>
+                    <label><span>Alert below</span><div class="input-suffix"><input id="metricTpsThreshold" type="number" min="5" max="20" step="0.5"><b>TPS</b></div></label>
+                    <label><span>Duration</span><select id="metricTpsDuration">
+                      <option value="0">Inmediatamente</option><option value="60">1 minuto</option><option value="120">2 minutos</option><option value="300">5 minutos</option><option value="600">10 minutos</option>
+                    </select></label>
+                    <small>Not evaluated while the server is paused or empty.</small>
+                  </article>
+                  <article class="alert-rule-card">
+                    <label class="alert-rule-switch"><input id="metricStorageEnabled" type="checkbox"><span>Almacenamiento alto</span></label>
+                    <label><span>Alert at</span><div class="input-suffix"><input id="metricStorageThreshold" type="number" min="50" max="99" step="1"><b>%</b></div></label>
+                    <label><span>Duration</span><select id="metricStorageDuration">
+                      <option value="0">Inmediatamente</option><option value="60">1 minuto</option><option value="300">5 minutos</option><option value="600">10 minutos</option><option value="1800">30 minutos</option>
+                    </select></label>
+                  </article>
+                  <article class="alert-rule-card">
+                    <label class="alert-rule-switch"><input id="serverDownEnabled" type="checkbox"><span>Prolonged outage</span></label>
+                    <label><span>Alert after</span><select id="serverDownDelay">
+                      <option value="10">10 segundos</option><option value="30">30 segundos</option><option value="60">1 minuto</option><option value="120">2 minutos</option><option value="300">5 minutos</option>
+                    </select></label>
+                    <small>Brief interruptions and HTTP 429 responses do not generate alerts.</small>
+                  </article>
+                  <article class="alert-rule-card alert-rule-common">
+                    <strong>Comportamiento general</strong>
+                    <label><span>Repeat alert after</span><select id="metricAlertCooldown">
+                      <option value="300">5 minutos</option><option value="900">15 minutos</option><option value="1800">30 minutos</option><option value="3600">1 hora</option><option value="21600">6 horas</option>
+                    </select></label>
+                    <label class="alert-rule-switch"><input id="metricRecoveryEnabled" type="checkbox"><span>Notify when recovered</span></label>
+                  </article>
+                </div>
+                <div class="alert-rules-actions"><button id="saveMetricSettingsBtn" class="primary" type="button">Save rules</button></div>
+              </div>
+            </details>
+          </section>
+        </div>
+      </section>
+
+
+      <section id="playersView" class="view-section hidden">
+        <div class="layout">
+          <aside class="sidebar panel player-sidebar">
+            <div class="section-title"><h2>Players</h2><span id="playerCount" class="count">0</span></div>
+            <button id="bulkActionsBtn" class="secondary wide players-bulk-button" type="button">⚡ Bulk actions</button>
+            <input id="playerSearch" class="player-search" autocomplete="off" placeholder="Search name or UUID">
+            <div id="playerFilters" class="player-filters" aria-label="Filter players">
+              <button type="button" class="active" data-player-filter="all">All</button>
+              <button type="button" data-player-filter="online">Online</button>
+              <button type="button" data-player-filter="whitelist">Whitelist</button>
+              <button type="button" data-player-filter="banned">Banned</button>
+              <button type="button" data-player-filter="offline">Offline</button>
+            </div>
+            <div id="playerList" class="player-list"></div>
+            <div id="emptyPlayers" class="empty">No players match this filter.</div>
+            <div class="sidebar-form whitelist-add-form">
+              <label for="whitelistName">Add to whitelist</label>
+              <input id="whitelistName" maxlength="16" autocomplete="off" placeholder="Player name">
+              <input id="whitelistUuid" maxlength="36" autocomplete="off" spellcheck="false" placeholder="Exact UUID (optional)">
+              <button id="addWhitelistBtn" class="secondary wide">Add and reload</button>
+              <small id="whitelistUuidHint">The panel will determine how to resolve the UUID based on the server mode.</small>
+            </div>
+            <div class="sidebar-form whitelist-manager">
+              <div class="section-title compact"><h3>Whitelist</h3><span id="whitelistCount" class="count">0</span></div>
+              <div id="whitelistList" class="whitelist-list"></div>
+              <div id="emptyWhitelist" class="empty compact">The whitelist is empty.</div>
+            </div>
+          </aside>
+
+          <section class="content">
+            <div id="welcome" class="panel welcome"><div class="big-icon">⛏</div><h2>Select a player</h2><p>View status and inventory and run administrative actions.</p></div>
+            <div id="playerView" class="hidden">
+              <section class="panel player-header">
+                <div id="avatar" class="avatar">?</div>
+                <div class="player-heading"><h2 id="playerName">Player</h2><code id="playerUuid"></code></div>
+                <div class="header-badges"><span id="onlineBadge" class="badge"></span><span id="banBadge" class="badge banned-badge hidden">Banned</span><span id="gameModeBadge" class="badge"></span><span id="worldBadge" class="badge"></span></div>
+              </section>
+
+              <section class="stats-grid">
+                <article class="panel stat"><span>Salud</span><strong id="healthStat">—</strong><div class="meter"><i id="healthMeter"></i></div></article>
+                <article class="panel stat"><span>Comida</span><strong id="foodStat">—</strong><div class="meter"><i id="foodMeter"></i></div></article>
+                <article class="panel stat"><span>Nivel</span><strong id="levelStat">—</strong><small id="xpStat"></small></article>
+                <article class="panel stat"><span>Position</span><strong id="positionStat">—</strong><small id="orientationStat"></small></article>
+              </section>
+
+              <section class="player-workspace">
+                <section id="inventoryPanel" class="panel inventory-panel player-inventory-main">
+                  <div class="section-title inventory-heading">
+                    <div>
+                      <div class="inventory-title-line"><h3>Inventario</h3><span id="inventoryLiveBadge" class="inventory-live-badge idle">En espera</span></div>
+                      <small id="inventorySummary">0 objetos</small>
+                    </div>
+                    <button id="inventoryBtn" class="ghost inventory-refresh-btn" type="button" title="Refresh inventory">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.8-4.2L3 10"/><path d="M3 4v6h6M4 13a8 8 0 0 0 14.8 4.2L21 14"/><path d="M21 20v-6h-6"/></svg>
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                  <div class="inventory-tools"><input id="inventorySearch" placeholder="Search item"><select id="inventoryCategory">
+                    <option value="all">All</option><option value="tools">Tools and weapons</option><option value="armor">Armor</option>
+                    <option value="food">Comida</option><option value="blocks">Bloques</option><option value="other">Otros</option>
+                  </select></div>
+                  <div class="equipment">
+                    <div><span>Casco</span><div id="helmetSlot" class="item-slot"></div></div><div><span>Pechera</span><div id="chestplateSlot" class="item-slot"></div></div>
+                    <div><span>Leggings</span><div id="leggingsSlot" class="item-slot"></div></div><div><span>Botas</span><div id="bootsSlot" class="item-slot"></div></div>
+                    <div><span>Segunda mano</span><div id="offHandSlot" class="item-slot"></div></div>
+                  </div>
+                  <div id="inventoryGrid" class="inventory-grid"></div>
+                </section>
+
+                <aside class="player-actions-rail">
+                  <article class="panel player-actions-panel">
+                    <div class="section-title player-actions-title">
+                      <div><h3>Quick actions</h3><small>Status, access, and utilities</small></div>
+                      <button id="refreshPlayerBtn" class="quick-refresh-btn" type="button" aria-label="Recargar ficha" title="Recargar ficha">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.8-4.2L3 10"/><path d="M3 4v6h6M4 13a8 8 0 0 0 14.8 4.2L21 14"/><path d="M21 20v-6h-6"/></svg>
+                      </button>
+                    </div>
+                    <div class="quick-action-grid" role="group" aria-label="Player quick actions">
+                      <button data-action="heal" data-online-only class="quick-action-btn" title="Restore full health"><span class="quick-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20.2 4.7 13A4.8 4.8 0 0 1 11.5 6l.5.6.5-.6a4.8 4.8 0 0 1 6.8 6.9Z"/><path d="M12 8.7v5.8M9.1 11.6h5.8"/></svg></span><span class="quick-action-label">Heal</span></button>
+                      <button data-action="feed" data-online-only class="quick-action-btn" title="Restore food and saturation"><span class="quick-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v7M4.5 3v4.3A2.7 2.7 0 0 0 7 10M9.5 3v4.3A2.7 2.7 0 0 1 7 10v11"/><path d="M16.8 3c-2 2.4-2.6 6.7-.5 9.2l1.5.2V21M16.8 3v9.3"/></svg></span><span class="quick-action-label">Feed</span></button>
+                      <button id="whitelistBtn" class="quick-action-btn" title="Toggle whitelist access"><span class="quick-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5.2c0 4.3 2.8 7.8 7 9.8 4.2-2 7-5.5 7-9.8V6Z"/><path d="m8.7 12 2.1 2.1 4.6-4.6"/></svg></span><span class="quick-action-label">Whitelist</span></button>
+                      <button id="operatorBtn" class="quick-action-btn operator-action" title="Grant or revoke operator permissions"><span class="quick-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 8 3.6 3L12 5l4.4 6L20 8l-1.4 9H5.4Z"/><path d="M6 20h12M8.2 14.5h7.6"/></svg></span><span class="quick-action-label">Make operator</span></button>
+                    </div>
+                    <div class="form-block compact-action-block" data-online-section><label>Game mode</label><div class="inline-form"><select id="gamemodeSelect"><option>SURVIVAL</option><option>CREATIVE</option><option>ADVENTURE</option><option>SPECTATOR</option></select><button id="gamemodeBtn" class="secondary compact-apply-btn">Apply</button></div></div>
+                    <div class="form-block compact-action-block" data-online-section>
+                      <label>Teleport</label>
+                      <div class="teleport-grid"><select id="tpWorld"></select><input id="tpCoords" autocomplete="off" placeholder="X Y Z"></div>
+                      <div class="location-shortcuts"><button id="currentLocationBtn" class="ghost">Current</button><button id="deathLocationBtn" class="ghost">Last death</button><button id="respawnLocationBtn" class="ghost">Respawn</button></div>
+                      <div class="saved-place-row"><select id="playerPlaceSelect"></select><button id="usePlayerPlaceBtn" class="ghost">Use</button></div>
+                      <button id="teleportBtn" class="secondary wide compact-wide-btn">Teleport</button>
+                    </div>
+                    <div class="form-block danger-zone moderation-zone"><label>Moderation</label><input id="reasonInput" maxlength="200" placeholder="Reason"><div class="moderation-actions">
+                      <button id="kickBtn" data-online-only class="moderation-btn warning"><span class="moderation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h10v16H4Z"/><path d="M14 12h7M18 8l4 4-4 4"/><circle cx="11" cy="12" r=".7"/></svg></span><span>Kick</span></button>
+                      <button id="banBtn" class="moderation-btn danger"><span class="moderation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5.2c0 4.3 2.8 7.8 7 9.8 4.2-2 7-5.5 7-9.8V6Z"/><path d="M8 8l8 8M16 8l-8 8"/></svg></span><span>Ban</span></button>
+                      <button id="unbanBtn" class="moderation-btn danger-outline hidden"><span class="moderation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5.2c0 4.3 2.8 7.8 7 9.8 4.2-2 7-5.5 7-9.8V6Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></svg></span><span>Desbanear</span></button>
+                      <button id="clearBtn" data-online-only class="moderation-btn danger-outline"><span class="moderation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h16l-1 12H5Z"/><path d="M8 8V5h8v3M3 8h18M9 12v4M15 12v4"/></svg></span><span>Clear</span></button>
+                    </div><small id="banSupportNote" class="muted hidden">The connected adapter does not support unbanning from the web interface.</small></div>
+                  </article>
+
+                  <details id="playerInfoPanel" class="panel player-info-collapsible">
+                    <summary><span><strong>Information</strong><small>Data, history, and statistics</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></summary>
+                    <div class="player-info-body"><dl class="details-list">
+                      <div><dt>Status</dt><dd id="onlineDetail">—</dd></div><div><dt>IP</dt><dd id="ipDetail">—</dd></div>
+                      <div><dt>Vuelo</dt><dd id="flyingDetail">—</dd></div><div><dt>Operador</dt><dd id="operatorDetail">—</dd></div>
+                      <div><dt>Whitelist</dt><dd id="whitelistDetail">—</dd></div><div><dt>Baneo</dt><dd id="bannedDetail">No</dd></div>
+                      <div><dt>Ban reason</dt><dd id="banReasonDetail">—</dd></div><div><dt>Ban date</dt><dd id="banCreatedDetail">—</dd></div>
+                      <div><dt>Expira</dt><dd id="banExpiresDetail">—</dd></div><div><dt>Ha jugado</dt><dd id="hasPlayedDetail">—</dd></div>
+                      <div><dt>First joined</dt><dd id="firstPlayedDetail">—</dd></div><div><dt>Last joined</dt><dd id="lastPlayedDetail">—</dd></div>
+                      <div><dt>Last death</dt><dd id="lastDeathDetail">—</dd></div><div><dt>Respawn</dt><dd id="respawnDetail">—</dd></div>
+                      <div><dt>Play time</dt><dd id="playTimeDetail">—</dd></div><div><dt>Deaths</dt><dd id="deathsDetail">—</dd></div>
+                      <div><dt>Mob kills</dt><dd id="mobKillsDetail">—</dd></div><div><dt>Player kills</dt><dd id="playerKillsDetail">—</dd></div>
+                    </dl></div>
+                  </details>
+                </aside>
+              </section>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="placesView" class="view-section hidden">
+        <div class="page-grid places-page-grid">
+          <article id="placeEditorPanel" class="panel">
+            <div class="section-title place-editor-title"><div><h2>Save Location</h2><small>Teleport shortcuts</small></div></div>
+            <input id="placeId" type="hidden">
+            <div class="place-form-grid">
+              <label class="place-field-name"><span>Name</span><input id="placeName" maxlength="50" placeholder="Shop, spawn, arena..."></label>
+              <label class="place-field-world"><span>World</span><select id="placeWorld"></select></label>
+              <div class="place-coordinate-grid" aria-label="Coordinates">
+                <label><span>X</span><input id="placeX" type="number" step="any" inputmode="decimal"></label>
+                <label><span>Y</span><input id="placeY" type="number" step="any" inputmode="decimal"></label>
+                <label><span>Z</span><input id="placeZ" type="number" step="any" inputmode="decimal"></label>
+              </div>
+              <div class="place-angle-grid" aria-label="Orientation">
+                <label><span>Yaw</span><input id="placeYaw" type="number" step="any" inputmode="decimal" value="0"></label>
+                <label><span>Pitch</span><input id="placePitch" type="number" step="any" inputmode="decimal" value="0"></label>
+              </div>
+            </div>
+            <div class="button-row place-editor-actions"><button id="placeFromPlayerBtn" class="ghost place-editor-btn" title="Use selected player"><span class="btn-icon" aria-hidden="true">◎</span><span>Player</span></button><button id="placeFromMapBtn" class="ghost place-editor-btn" type="button" title="Choose on map"><span class="btn-icon" aria-hidden="true">⌖</span><span>Map</span></button><button id="savePlaceBtn" class="primary place-editor-btn" title="Save Location"><span class="btn-icon" aria-hidden="true">💾</span><span>Save</span></button></div>
+          </article>
+          <article class="panel places-summary-panel">
+            <div class="section-title"><div><h2>Locations</h2><small id="placesCount">0 guardados</small></div></div>
+            <div id="placesList" class="places-list"></div>
+            <div id="emptyPlaces" class="empty">No saved locations.</div>
+          </article>
+        </div>
+      </section>
+
+      <dialog id="placeMapPickerDialog" class="place-map-dialog">
+        <article id="placeMapPickerPanel" class="place-map-dialog-card panel place-map-picker-panel">
+          <button id="closePlaceMapPickerDialog" class="dialog-close" type="button" aria-label="Close">×</button>
+          <div class="place-map-dialog-header">
+            <div class="place-map-dialog-header-main">
+              <div class="place-map-dialog-titlebox"><h2 id="placeMapPickerTitle">Select a location from the map</h2><small id="placeMapPickerMeta">Click a block to use the coordinates reported by BlueMap.</small></div>
+              <div class="place-map-provider-summary"><span class="muted">Map</span><small id="placeMapProviderAvailability" class="map-provider-availability" data-status="neutral">Checking configured maps…</small></div>
+            </div>
+            <div class="place-map-dialog-header-side">
+              <div class="map-picker-mode-buttons place-map-provider-buttons" role="group" aria-label="Map provider">
+                <button id="placeMapSquareProviderBtn" class="map-picker-mode-btn" type="button" aria-pressed="false">Ligero 2D</button>
+                <button id="placeMapBlueProviderBtn" class="map-picker-mode-btn" type="button" aria-pressed="false">BlueMap 3D</button>
+              </div>
+              <div class="button-row place-map-dialog-action-row"><button id="stopPlaceMapPickerBtn" class="primary small-btn" type="button">Use selection</button><a id="openPlaceMapPickerBtn" class="button-link secondary small-btn hidden" href="#" target="_blank" rel="noopener noreferrer">Open separately</a></div>
+            </div>
+          </div>
+          <div id="placeMapModeBar" class="map-picker-modebar" aria-label="Map selection mode">
+            <div class="map-picker-mode-buttons" role="group" aria-label="Coordinate mode">
+              <button id="placeMapQuickModeBtn" class="map-picker-mode-btn" type="button" aria-pressed="false">Quick X/Z</button>
+              <button id="placeMapExactModeBtn" class="map-picker-mode-btn" type="button" aria-pressed="false">Exact 3D block</button>
+            </div>
+            <div id="placeMapCenterActions" class="map-picker-center-actions">
+              <span id="placeMapCenterLabel" class="muted">X/Z position not selected yet</span>
+              <button id="usePlaceMapCenterBtn" class="primary" type="button" disabled>Use selected X/Z</button>
+            </div>
+          </div>
+          <div id="placeMapMobileHint" class="map-mobile-hint hidden"><strong>Automatic 2D selection</strong><span>Tap the destination once. The pin marks the point and Minecraft calculates a safe Y automatically.</span></div>
+          <div id="placeMapBridgeStatus" class="map-picker-status" data-status="waiting"><strong>Waiting for the map bridge</strong><span>You can also copy coordinates from BlueMap and paste them below.</span></div>
+          <div id="placeMapFrameShell" class="bluemap-frame-shell place-map-frame-shell"><iframe id="placeMapFrame" title="BlueMap coordinate picker" loading="lazy" referrerpolicy="no-referrer" allowfullscreen></iframe></div>
+        </article>
+      </dialog>
+
+      <section id="bluemapView" class="view-section hidden">
+        <article class="panel bluemap-panel">
+          <div class="section-title bluemap-toolbar">
+            <div><h2 id="blueMapTitle">BlueMap</h2><small id="blueMapMeta">Live web map</small></div>
+            <div class="button-row"><button id="refreshBlueMapBtn" class="ghost small-btn" type="button">Recargar</button><a id="openBlueMapBtn" class="button-link secondary small-btn hidden" href="#" target="_blank" rel="noopener noreferrer">Open separately</a></div>
+          </div>
+          <div id="blueMapEmpty" class="empty bluemap-empty">BlueMap is not configured for this server. Configure it under System → System Settings.</div>
+          <div id="blueMapFrameShell" class="bluemap-frame-shell hidden"><iframe id="blueMapFrame" title="Map BlueMap" loading="lazy" referrerpolicy="no-referrer" allowfullscreen></iframe></div>
+        </article>
+      </section>
+
+      <section id="historyView" class="view-section hidden">
+        <div class="page-grid history-layout">
+          <article class="panel">
+            <div class="section-title"><div><h2>Action History</h2><small>Operations performed from the panel</small></div><div class="mini-actions">
+              <select id="historyCategory"><option value="">All</option><option value="player">Player</option><option value="bulk">Bulk</option><option value="world">World</option><option value="places">Locations</option><option value="whitelist">Whitelist</option><option value="crafty">Crafty</option><option value="metrics">Metrics</option><option value="system">System</option></select>
+              <button id="refreshHistoryBtn" class="ghost">Refresh</button>
+            </div></div>
+            <div class="table-wrap history-table-wrap"><table><thead><tr><th>Date</th><th>Username</th><th>Category</th><th>Action</th><th>Player</th><th>Result</th><th>Details</th></tr></thead><tbody id="historyTable"></tbody></table></div>
+            <div id="historyMobileList" class="history-mobile-list"></div>
+            <div id="emptyHistory" class="empty">No actions have been recorded.</div>
+          </article>
+          <article class="panel">
+            <div class="section-title"><div><h2>Sessions</h2><small>Connections observed since this version</small></div><button id="refreshSessionsBtn" class="ghost">Refresh</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Player</th><th>Joined</th><th>Left</th><th>Duration</th><th>Last world</th></tr></thead><tbody id="sessionsTable"></tbody></table></div>
+            <div id="emptyHistorySessions" class="empty">No sessions have been recorded.</div>
+          </article>
+        </div>
+      </section>
+
+
+
+      <section id="serversView" class="view-section hidden">
+        <div class="server-management-page">
+          <article class="panel server-management-hero">
+            <div>
+              <h2>Servers</h2>
+              <p>A direct plugin connection works without Crafty. Crafty is optional and adds discovery, start, stop, and backups.</p>
+            </div>
+            <div class="server-management-hero-actions"><button id="openConnectionGuideBtn" class="ghost" type="button">Connection Wizard</button><button id="openAddServerWizardBtn" class="secondary" type="button">+ Add Server</button></div>
+          </article>
+
+          <section class="server-overview-section">
+            <div class="section-title">
+              <div><h2>Configured profiles</h2><small id="serverOverviewMeta">—</small></div>
+            </div>
+            <div id="serverManagementList" class="server-management-list"></div>
+          </section>
+
+          <section id="serverDetailsPanel" class="server-details-panel hidden" role="dialog" aria-modal="true" aria-labelledby="serverDetailsTitle">
+            <div class="server-details-modal-card">
+            <div class="server-details-toolbar">
+              <div><span class="eyebrow">Configuration</span><strong id="serverDetailsTitle">Selected server</strong></div>
+              <button id="closeServerDetailsBtn" class="ghost small-btn" type="button">Close configuration</button>
+            </div>
+          <article class="panel server-profile-card">
+            <div class="section-title">
+              <div>
+                <div class="server-editor-heading"><h2>Edit Server</h2><span id="systemServerSourceBadge" class="server-origin-badge">Manual</span></div>
+                <small id="systemServerProfileMeta">Independent plugin and map configuration.</small>
+              </div>
+              <button id="createServerProfileBtn" class="secondary small-btn server-details-add-button" type="button">+ Add Server</button>
+            </div>
+            <div class="server-profile-form">
+              <label><span>Name</span><input id="systemServerName" maxlength="80" placeholder="Primary server"></label>
+              <label class="check-row"><input id="systemServerDefault" type="checkbox"><span>Use as primary server</span></label>
+              <div class="server-profile-actions"><button id="saveServerProfileBtn" class="secondary" type="button">Save name</button><button id="deleteServerProfileBtn" class="danger-outline" type="button">Delete server</button></div>
+            </div>
+          </article>
+
+
+
+          <section class="server-editor-section">
+            <div class="section-title">
+              <div><h2>Active Server Connections</h2><small>Plugin, optional Crafty link, and maps belong only to this profile.</small></div>
+            </div>
+          <section class="connection-settings-grid">
+            <article class="panel connection-card connection-card-plugin">
+              <div class="section-title">
+                <div><h2>Plugin connection</h2><small>Configure the Player Panel API installed on this server.</small></div>
+                <span id="pluginConnectionBadge" class="connection-badge">Not tested</span>
+              </div>
+              <label class="connection-toggle"><input id="pluginConnectionEnabled" type="checkbox"><span class="connection-toggle-label">Enable plugin connection</span></label>
+              <div class="connection-form-grid">
+                <div class="connection-field-wide connection-route-picker">
+                  <span>Connection type</span>
+                  <div class="connection-preset-buttons">
+                    <button type="button" class="ghost small-btn" data-connection-preset="plugin-docker">Red Docker</button>
+                    <button type="button" class="ghost small-btn" data-connection-preset="plugin-lan">IP / LAN</button>
+                    <button type="button" class="ghost small-btn" data-connection-preset="plugin-remote">Dominio HTTPS</button>
+                    <button type="button" class="ghost small-btn" data-connection-preset="plugin-custom">Personalizada</button>
+                  </div>
+                </div>
+                <label class="connection-field-wide connection-address-field"><span>API address</span><input id="pluginConnectionUrl" type="text" inputmode="url" placeholder="192.168.1.50:8765 o https://panel.example.com" autocomplete="off"><small id="pluginConnectionRouteHelp" class="setting-help">Accepts an IP address, hostname, or complete URL.</small></label>
+                <label class="connection-field-wide"><span>Token API</span><input id="pluginConnectionToken" type="password" placeholder="Leave blank to keep the current value" autocomplete="new-password"><small id="pluginTokenState" class="setting-help">Not configured</small></label>
+                <label class="connection-toggle connection-field-wide connection-toggle-box"><input id="pluginConnectionVerifyTls" type="checkbox"><span class="connection-toggle-label">Verify the plugin TLS certificate</span></label>
+              </div>
+              <div class="connection-actions">
+                <span id="pluginConnectionResult" class="muted">Changes are applied immediately.</span>
+                <button id="savePluginConnectionBtn" class="secondary" type="button">Save and test</button>
+              </div>
+            </article>
+
+            <article class="panel connection-card connection-card-crafty">
+              <div class="section-title">
+                <div><h2>Crafty <span class="optional-label">optional</span></h2><small>Adds server management and backups; it is not required for player features.</small></div>
+                <span id="craftyConnectionBadge" class="connection-badge">Not tested</span>
+              </div>
+              <label class="connection-toggle"><input id="craftyConnectionEnabled" type="checkbox"><span class="connection-toggle-label">Enable Management & Status for this server</span></label>
+              <div class="connection-form-grid">
+                <div class="connection-field-wide crafty-assignment-field">
+                  <label><span>Crafty installation</span><select id="craftyConnectionAssignment"></select><small class="setting-help">Credentials are managed under “Crafty Installations”.</small></label>
+                  <button id="manageCraftyInstallationsBtn" class="ghost small-btn" type="button">Manage installations</button>
+                </div>
+                <label class="connection-field-wide"><span>Discovered server</span><select id="craftyDiscoveredServerSelect"><option value="">Enter or discover a UUID</option></select></label>
+                <label class="connection-field-wide"><span>Crafty server UUID</span><input id="craftyConnectionServerId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"></label>
+              </div>
+              <div class="connection-actions">
+                <span id="craftyConnectionResult" class="muted">Select an installation and a server.</span>
+                <button id="saveCraftyConnectionBtn" class="secondary" type="button">Save link and test</button>
+              </div>
+            </article>
+
+            <article class="panel connection-card connection-card-bluemap">
+              <div class="section-title">
+                <div><h2>BlueMap Integration</h2><small>Displays this server web map inside the panel.</small></div>
+                <span id="blueMapConnectionBadge" class="connection-badge">Not tested</span>
+              </div>
+              <label class="connection-toggle"><input id="blueMapConnectionEnabled" type="checkbox"><span class="connection-toggle-label">Enable BlueMap</span></label>
+              <div class="connection-form-grid">
+                <label class="connection-field-wide connection-address-field"><span>BlueMap address</span><input id="blueMapConnectionUrl" type="text" inputmode="url" placeholder="192.168.1.50:8100 or https://map.example.com" autocomplete="off"><small class="setting-help">Accepts a direct IP address, host name, or complete URL.</small></label>
+                <label class="connection-field-wide"><span>Preferred map ID (optional)</span><input id="blueMapConnectionMapId" type="text" placeholder="world" autocomplete="off"><small class="setting-help">Used to identify the primary map; the URL must open the BlueMap web app directly.</small></label>
+              </div>
+              <div class="connection-actions">
+                <span id="blueMapConnectionResult" class="muted">BlueMap will appear in the Server menu when enabled.</span>
+                <button id="saveBlueMapConnectionBtn" class="secondary" type="button">Save BlueMap</button>
+              </div>
+            </article>
+
+            <article class="panel connection-card connection-card-squaremap">
+              <div class="section-title">
+                <div><h2>Mobile Map with squaremap</h2><small>Lightweight 2D picker for iPhone and Android; Fabric calculates a safe height.</small></div>
+                <span id="squareMapConnectionBadge" class="connection-badge">Not tested</span>
+              </div>
+              <label class="connection-toggle"><input id="squareMapConnectionEnabled" type="checkbox"><span class="connection-toggle-label">Enable squaremap 2D</span></label>
+              <div class="connection-form-grid">
+                <label class="connection-field-wide connection-address-field"><span>squaremap address</span><input id="squareMapConnectionUrl" type="text" inputmode="url" placeholder="192.168.1.50:8110 or https://map2d.example.com" autocomplete="off"><small class="setting-help">Accepts a direct IP or a public URL accessible from the browser or PWA.</small></label>
+                <label class="connection-field-wide"><span>World ID</span><input id="squareMapConnectionWorldId" type="text" placeholder="minecraft:overworld" autocomplete="off"><small class="setting-help">Use the canonical Minecraft ID. Player Panel converts it for squaremap: minecraft:overworld → minecraft_overworld.</small></label>
+              </div>
+              <div class="connection-actions">
+                <span id="squareMapConnectionResult" class="muted">It is used automatically on mobile when configured.</span>
+                <button id="saveSquareMapConnectionBtn" class="secondary" type="button">Save squaremap</button>
+              </div>
+            </article>
+          </section>
+
+
+
+          </section>
+            </div>
+          </section>
+        </div>
+      </section>
+
+
+      <section id="crafty-connectionsView" class="view-section hidden">
+        <div class="crafty-connections-page">
+          <article class="panel crafty-connections-hero">
+            <div>
+              <span class="eyebrow">Shared Management</span>
+              <h2>Conexiones Crafty</h2>
+              <p>Manage installations, credentials, security, and visible servers through the v2 API.</p>
+            </div>
+            <button id="craftyAddServerShortcutBtn" class="secondary" type="button">Add Server from Crafty</button>
+          </article>
+          <article class="panel crafty-installations-card">
+            <header class="crafty-installations-header">
+              <div class="crafty-installations-title">
+                <span class="eyebrow">Shared configuration</span>
+                <h2>Crafty Installations</h2>
+                <p>Store credentials once, discover servers, and link each profile by UUID.</p>
+              </div>
+              <span id="craftyInstallationBadge" class="connection-badge">Not tested</span>
+            </header>
+
+            <section class="crafty-installation-switcher" aria-label="Crafty installation activa">
+              <label class="crafty-installation-select-field">
+                <span>Saved installation</span>
+                <select id="craftyInstallationSelect"></select>
+                <small>Select the installation to edit or test.</small>
+              </label>
+              <div class="crafty-switcher-actions">
+                <button id="newCraftyInstallationBtn" class="ghost" type="button">+ New installation</button>
+                <button id="deleteCraftyInstallationBtn" class="danger-outline" type="button">Delete</button>
+              </div>
+            </section>
+
+            <div class="crafty-config-layout">
+              <section class="crafty-config-section">
+                <div class="crafty-config-heading">
+                  <span class="crafty-step">1</span>
+                  <div>
+                    <h3>Identity and access</h3>
+                    <p>Internal settings Player Panel uses to connect to API v2.</p>
+                  </div>
+                </div>
+
+                <div class="crafty-config-fields">
+                  <label class="crafty-field-wide">
+                    <span>Installation name</span>
+                    <input id="craftyInstallationName" maxlength="80" placeholder="Primary Crafty">
+                  </label>
+
+                  <div class="crafty-field-wide connection-route-picker">
+                    <span>Connection type</span>
+                    <div class="connection-preset-buttons">
+                      <button type="button" class="ghost small-btn" data-connection-preset="crafty-docker">Red Docker</button>
+                      <button type="button" class="ghost small-btn" data-connection-preset="crafty-lan">IP / LAN</button>
+                      <button type="button" class="ghost small-btn" data-connection-preset="crafty-remote">Dominio HTTPS</button>
+                      <button type="button" class="ghost small-btn" data-connection-preset="crafty-custom">Personalizada</button>
+                    </div>
+                  </div>
+
+                  <label class="crafty-field-wide connection-address-field">
+                    <span>Crafty API address</span>
+                    <input id="craftyInstallationUrl" type="text" inputmode="url" placeholder="192.168.1.50:8443 or https://crafty.example.com" autocomplete="off">
+                    <small id="craftyInstallationRouteHelp" class="setting-help">Accepts a direct IP, hostname, or complete URL reachable from the container.</small>
+                  </label>
+
+                  <label>
+                    <span>API username</span>
+                    <input id="craftyInstallationUsername" type="text" autocomplete="username" placeholder="playerpanel">
+                  </label>
+
+                  <label>
+                    <span>API password</span>
+                    <input id="craftyInstallationPassword" type="password" placeholder="Leave blank to keep the current value" autocomplete="new-password">
+                    <small id="craftyInstallationPasswordState" class="setting-help">Not configured</small>
+                  </label>
+
+                  <label class="crafty-field-wide">
+                    <span>Token API <em>recommended alternative</em></span>
+                    <input id="craftyInstallationToken" type="password" placeholder="Leave blank to keep the current value" autocomplete="new-password">
+                    <small id="craftyInstallationTokenState" class="setting-help">Not configured</small>
+                  </label>
+
+
+                </div>
+              </section>
+
+              <section class="crafty-config-section">
+                <div class="crafty-config-heading">
+                  <span class="crafty-step">2</span>
+                  <div>
+                    <h3>Public Access and Security</h3>
+                    <p>Additional options for opening Crafty and validating its certificate.</p>
+                  </div>
+                </div>
+
+                <div class="crafty-config-fields crafty-config-fields-single">
+                  <label class="crafty-field-wide">
+                    <span>Public Crafty URL <em>optional</em></span>
+                    <input id="craftyInstallationPanelUrl" type="text" inputmode="url" placeholder="192.168.1.50:8443 or https://crafty.example.com" autocomplete="off">
+                    <small class="setting-help">Used by the “Open Crafty” link in Player Panel.</small>
+                  </label>
+
+                  <label class="crafty-security-toggle">
+                    <input id="craftyInstallationVerifyTls" type="checkbox">
+                    <span>
+                      <strong>Verify TLS certificate</strong>
+                      <small>Enable this when Crafty uses a valid and trusted certificate.</small>
+                    </span>
+                  </label>
+                </div>
+
+                <aside class="crafty-security-note">
+                  <strong>Recommendation</strong>
+                  <span>Use a dedicated API token for Player Panel and restrict it to the required servers.</span>
+                </aside>
+              </section>
+            </div>
+
+            <footer class="crafty-installation-footer">
+              <div class="crafty-result">
+                <span class="crafty-result-dot" aria-hidden="true"></span>
+                <span id="craftyInstallationResult">The current connection will be migrated to this section automatically.</span>
+              </div>
+              <div class="crafty-primary-actions">
+                <button id="discoverCraftyServersBtn" class="ghost" type="button">Discover servers</button>
+                <button id="saveCraftyInstallationBtn" class="secondary" type="button">Save and test</button>
+              </div>
+            </footer>
+
+            <section id="craftyDiscoverySection" class="crafty-discovery-section hidden">
+              <header class="crafty-discovery-header">
+                <div>
+                  <span class="eyebrow">API v2</span>
+                  <h3>Serveres descubiertos</h3>
+                  <p id="craftyDiscoveryMeta">Select the servers to import.</p>
+                </div>
+                <button id="importCraftyServersBtn" class="secondary" type="button">Import selected</button>
+              </header>
+              <div id="craftyDiscoveredServers" class="crafty-discovered-list"></div>
+            </section>
+          </article>
+
+
+        </div>
+      </section>
+
+      <section id="systemView" class="view-section hidden">
+        <div class="system-page">
+          <article class="panel system-hero">
+            <div class="system-hero-copy">
+              <span class="eyebrow">Player Panel 1.10.19</span>
+              <h2>System and Maintenance</h2>
+              <p class="muted">Review panel status, create backups, and manage data retention.</p>
+            </div>
+            <div class="system-hero-actions">
+              <button id="refreshSystemBtn" class="secondary" type="button">Refresh status</button>
+              <a id="downloadDiagnosticBtn" class="button-link ghost" href="/api/local/system/report/download">Download diagnostics</a>
+            </div>
+          </article>
+
+          <section class="system-health-grid">
+            <article class="system-health-card"><span>Panel web</span><strong id="systemAppStatus">—</strong><small id="systemAppMeta">—</small></article>
+            <article class="system-health-card"><span>Plugin Minecraft</span><strong id="systemPluginStatus">—</strong><small id="systemPluginMeta">—</small></article>
+            <article class="system-health-card"><span>Crafty</span><strong id="systemCraftyStatus">—</strong><small id="systemCraftyMeta">—</small></article>
+            <article class="system-health-card"><span>SQLite</span><strong id="systemDbStatus">—</strong><small id="systemDbMeta">—</small></article>
+            <article class="system-health-card"><span>Disco</span><strong id="systemDiskStatus">—</strong><small id="systemDiskMeta">—</small></article>
+            <article class="system-health-card"><span>Web Push</span><strong id="systemPushStatus">—</strong><small id="systemPushMeta">—</small></article>
+          </section>
+
+          <section class="system-columns">
+            <article class="panel system-backups-panel">
+              <div class="section-title">
+                <div><h2>Panel backups</h2><small>Includes the SQLite database, VAPID key, and secrets required for full recovery.</small></div>
+                <button id="createSystemBackupBtn" class="primary" type="button">Create secure backup</button>
+              </div>
+              <div class="sensitive-notice"><strong>Contenido sensible.</strong> Download backups and store them in encrypted storage.</div>
+              <div id="systemBackupsList" class="system-backup-list"></div>
+              <div id="emptySystemBackups" class="empty compact">No internal backups yet.</div>
+            </article>
+
+            <article class="panel system-maintenance-panel">
+              <div class="section-title"><div><h2>Retention and Maintenance</h2><small>Define how long to retain data and compact SQLite when needed.</small></div></div>
+              <div class="maintenance-settings-grid">
+                <label>
+                  <span>Metrics history</span>
+                  <small class="setting-help">CPU, memory, players, and availability.</small>
+                  <div class="system-input-unit"><input id="systemMetricsRetention" type="number" min="1" max="365"><span>days</span></div>
+                </label>
+                <label>
+                  <span>Internal backups</span>
+                  <small class="setting-help">Maximum number stored on the server.</small>
+                  <div class="system-input-unit"><input id="systemBackupRetention" type="number" min="1" max="50"><span>backups</span></div>
+                </label>
+                <label>
+                  <span>Action History</span>
+                  <small class="setting-help">Audit trail of changes and administrative operations.</small>
+                  <div class="system-input-unit"><input id="systemAuditRetention" type="number" min="7" max="3650"><span>days</span></div>
+                </label>
+                <label>
+                  <span>Panel alerts</span>
+                  <small class="setting-help">Recorded events, warnings, and notifications.</small>
+                  <div class="system-input-unit"><input id="systemAlertRetention" type="number" min="7" max="3650"><span>days</span></div>
+                </label>
+                <label class="timezone-setting">
+                  <span>Zona horaria</span>
+                  <small class="setting-help">Used for dates, history, alerts, and sessions.</small>
+                  <select id="systemTimezone"></select>
+                </label>
+              </div>
+              <div class="button-row system-maintenance-actions">
+                <button id="saveSystemSettingsBtn" class="secondary" type="button">Save settings</button>
+                <button id="runSystemMaintenanceBtn" class="warning" type="button">Clean and compact SQLite</button>
+              </div>
+              <div id="systemMaintenanceResult" class="maintenance-result muted">Maintenance has not run during this session yet.</div>
+            </article>
+          </section>
+
+          <section class="system-columns">
+            <article class="panel">
+              <div class="section-title"><div><h2>SQLite database</h2><small>Integrity status, file size, and stored records.</small></div></div>
+              <dl id="systemDatabaseDetails" class="system-detail-list"></dl>
+            </article>
+            <article class="panel">
+              <div class="section-title"><div><h2>Runtime Environment</h2><small>System, time zone, process, and active refresh intervals.</small></div></div>
+              <dl id="systemRuntimeDetails" class="system-detail-list"></dl>
+            </article>
+          </section>
+
+          <article class="panel system-secrets-panel">
+            <div class="section-title"><div><h2>Credential security</h2><small>Verify that each secret is configured and protected. Secret values are never displayed.</small></div></div>
+            <div class="table-wrap system-table-wrap"><table><thead><tr><th>Secret</th><th>Configured</th><th>File</th><th>Permissions</th><th>Status</th></tr></thead><tbody id="systemSecretsTable"></tbody></table></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="usersView" class="view-section hidden">
+        <div class="page-grid accounts-layout">
+          <header class="panel accounts-hero">
+            <div>
+              <span class="eyebrow">System</span>
+              <h2>Accounts</h2>
+              <p>Manage security, notifications, sessions, and panel users.</p>
+            </div>
+            <nav class="accounts-tabs" role="tablist" aria-label="Account sections">
+              <button id="accountSelfTab" class="accounts-tab active" data-account-tab="self" type="button" role="tab" aria-selected="true" aria-controls="accountSelfSection">Mi cuenta</button>
+              <button id="accountAdminTab" class="accounts-tab hidden" data-account-tab="admin" type="button" role="tab" aria-selected="false" aria-controls="accountAdminSection">Panel users</button>
+            </nav>
+          </header>
+
+          <section id="accountSelfSection" class="accounts-section" role="tabpanel" aria-labelledby="accountSelfTab">
+            <article class="panel account-overview-card">
+              <div id="accountIdentityAvatar" class="account-identity-avatar" aria-hidden="true">U</div>
+              <div class="account-identity-copy">
+                <span class="eyebrow">Current session</span>
+                <h2 id="accountIdentityName">Username</h2>
+                <p id="accountIdentityUsername">@username</p>
+              </div>
+              <div class="account-summary-badges">
+                <span id="accountRoleBadge" class="badge">Role</span>
+                <span id="accountTwoFactorBadge" class="badge">2FA</span>
+                <span id="accountSessionCountBadge" class="badge">0 sessions</span>
+              </div>
+            </article>
+
+            <div class="accounts-section-heading">
+              <div><span class="eyebrow">Protection</span><h2>Account security</h2><p>Password and two-factor authentication.</p></div>
+            </div>
+            <section class="account-security-grid">
+              <article class="panel account-setting-card">
+                <div class="account-card-heading"><span class="account-card-icon" aria-hidden="true">⌨</span><div><h3>Change password</h3><p>Update the password used to sign in to the panel.</p></div></div>
+                <div class="account-card-body">
+                  <label><span>Current password</span><input id="currentPassword" type="password" autocomplete="current-password"></label>
+                  <label><span>New password</span><input id="newPassword" type="password" autocomplete="new-password"></label>
+                </div>
+                <div class="account-card-actions"><button id="changePasswordBtn" class="secondary">Change password</button></div>
+              </article>
+
+              <article class="panel account-setting-card">
+                <div class="account-card-heading"><span class="account-card-icon" aria-hidden="true">✓</span><div><h3>Two-factor authentication</h3><p>Protect the account with a time-based code.</p></div></div>
+                <p id="twoFactorStatus" class="account-status-line muted">Checking...</p>
+                <div class="account-card-actions"><button id="setup2faBtn" class="secondary">Set up 2FA</button></div>
+                <div id="twoFactorSetup" class="account-inline-setup hidden">
+                  <label><span>Secret</span><input id="twoFactorSecret" readonly></label>
+                  <label><span>6-digit code</span><input id="twoFactorCode" inputmode="numeric" maxlength="6"></label>
+                  <button id="confirm2faBtn" class="primary">Confirmar 2FA</button>
+                </div>
+                <div id="disable2faBox" class="account-inline-setup hidden">
+                  <label><span>Password to disable</span><input id="disable2faPassword" type="password"></label>
+                  <button id="disable2faBtn" class="danger-outline">Disable 2FA</button>
+                </div>
+              </article>
+            </section>
+
+            <div class="accounts-section-heading">
+              <div><span class="eyebrow">Devices</span><h2>App and Notifications</h2><p>PWA installation and push alerts for this device.</p></div>
+            </div>
+            <section class="account-app-grid">
+              <article class="panel account-setting-card pwa-account-card">
+                <div class="account-card-heading"><span class="account-card-icon" aria-hidden="true">▣</span><div><h3>Application</h3><p>Install Player Panel as a standalone application.</p></div></div>
+                <p id="pwaInstallStatus" class="account-status-line muted">Checking compatibilidad...</p>
+                <div class="account-card-actions"><button id="installFromAccountBtn" class="secondary" type="button">Install Player Panel</button></div>
+                <small class="muted">Uses the same panel users, permissions, and 2FA.</small>
+              </article>
+
+              <article class="panel account-setting-card push-account-card">
+                <div class="account-card-heading"><span class="account-card-icon" aria-hidden="true">●</span><div><h3>Push notifications</h3><p>Configure the notifications received by this device.</p></div></div>
+                <p id="pushStatus" class="account-status-line muted">Checking compatibilidad...</p>
+                <div class="button-row push-buttons account-card-actions">
+                  <button id="enablePushBtn" class="primary" type="button">Enable on this device</button>
+                  <button id="repairPushBtn" class="secondary hidden" type="button">Repair</button>
+                  <button id="disablePushBtn" class="danger-outline hidden" type="button">Disable</button>
+                  <button id="testPushBtn" class="ghost hidden" type="button">Probar en 10 segundos</button>
+                </div>
+                <details id="pushPreferences" class="push-preferences hidden">
+                  <summary>Elegir eventos</summary>
+                  <div class="push-event-grid">
+                    <label><input type="checkbox" value="join"> Player joined</label>
+                    <label><input type="checkbox" value="leave"> Player left</label>
+                    <label><input type="checkbox" value="death"> Death</label>
+                    <label><input type="checkbox" value="low_food"> Comida baja</label>
+                    <label><input type="checkbox" value="server_down"> Server/API offline</label>
+                    <label><input type="checkbox" value="server_up"> Server/API restored</label>
+                    <label><input type="checkbox" value="weather"> Weather change</label>
+                    <label><input type="checkbox" value="backup_requested"> Backup requested</label>
+                    <label><input type="checkbox" value="server_action"> Server action</label>
+                    <label><input type="checkbox" value="high_cpu"> CPU alta</label>
+                    <label><input type="checkbox" value="high_memory"> Memoria alta</label>
+                    <label><input type="checkbox" value="low_tps"> TPS bajo</label>
+                    <label><input type="checkbox" value="high_storage"> Almacenamiento alto</label>
+                    <label><input type="checkbox" value="metrics_recovered"> Recursos normalizados</label>
+                    <label><input type="checkbox" value="crafty_down"> Crafty offline</label>
+                    <label><input type="checkbox" value="crafty_up"> Crafty restaurado</label>
+                    <label><input type="checkbox" value="whitelist_denied"> Whitelist rejection</label>
+                  </div>
+                  <button id="savePushPreferencesBtn" class="secondary" type="button">Save preferences</button>
+                </details>
+                <div id="pushDevices" class="push-device-list"></div>
+                <small class="muted">On iPhone or iPad, open the installed app from the Home Screen.</small>
+              </article>
+            </section>
+
+            <div class="accounts-section-heading sessions-heading">
+              <div><span class="eyebrow">Access</span><h2>Open Sessions</h2><p>Devices that retain access to your account.</p></div>
+            </div>
+            <article class="panel account-sessions-panel">
+              <div id="accountSessions" class="session-cards"></div>
+              <div class="account-danger-footer">
+                <div><strong>Close all sessions</strong><small>This also closes the current session and requires you to sign in again.</small></div>
+                <button id="logoutAllBtn" class="danger-outline">Close all</button>
+              </div>
+            </article>
+          </section>
+
+          <section id="accountAdminSection" class="accounts-section hidden" role="tabpanel" aria-labelledby="accountAdminTab">
+            <div class="accounts-section-heading admin-heading">
+              <div><span class="eyebrow">Administration</span><h2>Panel users</h2><p>Create accounts, assign roles, and control permissions and sessions.</p></div>
+              <button id="newUserBtn" class="primary">New user</button>
+            </div>
+            <div class="admin-users-grid">
+              <article id="userAdminListPanel" class="panel user-admin-list-card">
+                <div class="section-title"><div><h3>Existing accounts</h3><small>Select a user to edit</small></div></div>
+                <div id="usersList" class="users-list"></div>
+                <div id="emptyUsers" class="empty">No users.</div>
+              </article>
+              <article id="userAdminFormPanel" class="panel user-admin-form-card">
+                <div class="section-title"><div><h3 id="userFormTitle">New user</h3><small>The password must contain at least 10 characters</small></div></div>
+                <input id="panelUserId" type="hidden">
+                <div class="form-grid user-form-grid">
+                  <label><span>Username</span><input id="panelUsername" maxlength="32" autocomplete="off" placeholder="moderador"></label>
+                  <label><span>Display name</span><input id="panelDisplayName" maxlength="60" placeholder="Moderador"></label>
+                  <label><span>Role</span><select id="panelRole"><option value="admin">Administrator</option><option value="moderator">Moderator</option><option value="viewer">Read only</option></select></label>
+                  <label><span>Password</span><input id="panelPassword" type="password" autocomplete="new-password" placeholder="Only when creating or changing"></label>
+                  <label class="check-row"><input id="panelActive" type="checkbox" checked><span>Active account</span></label>
+                </div>
+                <details class="permission-details"><summary>Custom permissions</summary><p class="muted">The role defines primary permissions. You can allow or block specific functions here.</p><div class="permission-columns"><div><h4>Additional allowances</h4><div id="allowPermissions" class="permission-list"></div></div><div><h4>Block</h4><div id="denyPermissions" class="permission-list"></div></div></div></details>
+                <div class="button-row user-form-actions"><button id="savePanelUserBtn" class="primary">Save user</button><button id="revokeUserSessionsBtn" class="ghost hidden">Close their sessions</button><button id="deletePanelUserBtn" class="danger-outline hidden">Delete</button></div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="connectionOnboardingDialog" class="modal connection-onboarding-dialog">
+      <div class="connection-onboarding-card">
+        <header class="connection-onboarding-header">
+          <div><span class="eyebrow">Initial Setup</span><h2>How do you want to connect Player Panel?</h2><p>Crafty is optional. Connect directly to the mod API or use Crafty to discover and manage servers.</p></div>
+          <button id="closeConnectionOnboardingBtn" class="icon-button" type="button" aria-label="Close">×</button>
+        </header>
+
+        <div id="connectionOnboardingChoices" class="connection-onboarding-choices">
+          <button class="connection-onboarding-choice recommended" type="button" data-onboarding-mode="manual">
+            <span class="connection-choice-icon" aria-hidden="true">↔</span>
+            <strong>Direct connection</strong>
+            <small>Enter the plugin URL and token. Crafty is not required, and local or remote servers are supported.</small>
+            <span>Configure direct connection →</span>
+          </button>
+          <button class="connection-onboarding-choice" type="button" data-onboarding-mode="crafty">
+            <span class="connection-choice-icon" aria-hidden="true">C</span>
+            <strong>Import from Crafty</strong>
+            <small>Connect Crafty, discover servers, and enable start, stop, backups, and status.</small>
+            <span>Conectar Crafty →</span>
+          </button>
+          <button class="connection-onboarding-choice later" type="button" data-onboarding-mode="later">
+            <span class="connection-choice-icon" aria-hidden="true">…</span>
+            <strong>Configure later</strong>
+            <small>Open the panel without connections. The wizard remains available under System → Servers.</small>
+            <span>Skip for now →</span>
+          </button>
+        </div>
+
+        <section id="connectionOnboardingManual" class="connection-onboarding-step hidden">
+          <div class="connection-onboarding-step-title"><button class="ghost small-btn" type="button" data-onboarding-back>← Back</button><div><h3>Direct plugin connection</h3><p>The existing primary profile will be used. Crafty remains disabled.</p></div></div>
+          <div class="connection-onboarding-form">
+            <label><span>Server name</span><input id="onboardingManualName" maxlength="80" placeholder="Primary server"></label>
+            <label><span>Plugin API URL</span><input id="onboardingManualUrl" type="url" placeholder="https://server.example.com"></label>
+            <label><span>Plugin API token</span><input id="onboardingManualToken" type="password" autocomplete="new-password" placeholder="Token from player-panel-fabric.properties"></label>
+            <label class="manual-toggle"><input id="onboardingManualVerifyTls" type="checkbox" checked><span><strong>Verify TLS certificate</strong><small>Disable only for internal or self-signed certificates.</small></span></label>
+          </div>
+          <p id="onboardingManualStatus" class="wizard-status muted">Enter the plugin URL and token.</p>
+          <footer class="connection-onboarding-footer"><button class="ghost" type="button" data-onboarding-back>Cancel</button><button id="saveOnboardingManualBtn" class="primary" type="button">Save and test</button></footer>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog id="addServerWizardDialog" class="modal add-server-wizard">
+      <form method="dialog" class="add-server-wizard-card" id="addServerWizardForm">
+        <header class="add-server-wizard-header">
+          <div>
+            <span class="eyebrow">New profile</span>
+            <h2>Add Server</h2>
+            <p id="addServerWizardSubtitle">Choose how to connect the server.</p>
+          </div>
+          <button id="closeAddServerWizardBtn" class="icon-button" type="button" aria-label="Close">×</button>
+        </header>
+
+        <div id="addServerMethodStep" class="add-server-wizard-step">
+          <div class="add-server-method-grid">
+            <button class="add-server-method-card recommended" type="button" data-add-server-method="manual">
+              <span class="add-server-method-icon" aria-hidden="true">↔</span>
+              <strong>Direct connection · no Crafty</strong>
+              <small>Enter the plugin URL and token. You can also configure squaremap and BlueMap.</small>
+              <span class="add-server-method-action">Configure directly →</span>
+            </button>
+            <button class="add-server-method-card" type="button" data-add-server-method="crafty">
+              <span class="add-server-method-icon" aria-hidden="true">C</span>
+              <strong>Import from Crafty</strong>
+              <small>Connect a Crafty installation and select one or more available servers.</small>
+              <span class="add-server-method-action">Conectar Crafty →</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="addServerCraftyStep" class="add-server-wizard-step hidden">
+          <div class="add-server-step-heading">
+            <button class="ghost small-btn" type="button" data-add-server-back>← Back</button>
+            <div>
+              <h3>Connect to Crafty</h3>
+              <p>Use a saved connection or enter a new one. Available servers will then be shown.</p>
+            </div>
+          </div>
+
+          <section id="wizardCraftyLoginPanel" class="wizard-crafty-login-panel">
+            <label class="wizard-field wizard-field-wide">
+              <span>Saved connection</span>
+              <select id="wizardCraftyConnectionSelect"></select>
+              <small>Select “New connection” to register another Crafty installation.</small>
+            </label>
+
+            <div class="wizard-crafty-login-grid">
+              <label class="wizard-field wizard-field-wide">
+                <span>Connection name</span>
+                <input id="wizardCraftyName" maxlength="80" placeholder="Primary Crafty">
+              </label>
+
+              <label class="wizard-field wizard-field-wide">
+                <span>Internal API URL</span>
+                <input id="wizardCraftyApiUrl" type="text" inputmode="url" placeholder="192.168.1.50:8443 or https://crafty.example.com" autocomplete="off">
+                <small>Accepts a direct IP, hostname, or complete URL reachable from the container.</small>
+              </label>
+
+              <label class="wizard-field">
+                <span>API username</span>
+                <input id="wizardCraftyUsername" autocomplete="username" placeholder="playerpanel">
+              </label>
+
+              <label class="wizard-field">
+                <span>API password</span>
+                <input id="wizardCraftyPassword" type="password" autocomplete="new-password" placeholder="Leave blank to keep the current value">
+              </label>
+
+              <label class="wizard-field wizard-field-wide">
+                <span>Token API <em>alternativa</em></span>
+                <input id="wizardCraftyToken" type="password" autocomplete="new-password" placeholder="Leave blank to keep the current value">
+              </label>
+
+              <label class="wizard-field wizard-field-wide">
+                <span>Public Crafty URL <em>optional</em></span>
+                <input id="wizardCraftyPanelUrl" type="text" inputmode="url" placeholder="192.168.1.50:8443 or https://crafty.example.com" autocomplete="off">
+              </label>
+
+              <label class="manual-toggle wizard-field-wide">
+                <input id="wizardCraftyVerifyTls" type="checkbox">
+                <span><strong>Verify TLS certificate</strong><small>Enable if Crafty uses a valid and trusted certificate.</small></span>
+              </label>
+            </div>
+
+            <div class="wizard-login-actions">
+              <span id="wizardCraftyLoginStatus" class="wizard-status muted">Select a connection or enter credentials.</span>
+              <button id="wizardCraftyLoginBtn" class="secondary" type="button">Sign in and find servers</button>
+            </div>
+          </section>
+
+          <section id="wizardCraftyResultsPanel" class="wizard-crafty-results-panel hidden">
+            <header class="wizard-results-header">
+              <div>
+                <span class="eyebrow">Available servers</span>
+                <h3>Select servers to add</h3>
+                <p id="wizardCraftyDiscoveryStatus">Crafty responded successfully.</p>
+              </div>
+              <button id="wizardCraftyChangeLoginBtn" class="ghost small-btn" type="button">Change connection</button>
+            </header>
+
+            <div id="wizardCraftyServerList" class="wizard-crafty-server-list"></div>
+
+            <footer class="add-server-wizard-footer">
+              <button class="ghost" type="button" data-add-server-cancel>Cancel</button>
+              <button id="wizardImportCraftyBtn" class="secondary" type="button" disabled>Add selected</button>
+            </footer>
+          </section>
+        </div>
+
+        <div id="addServerManualStep" class="add-server-wizard-step hidden">
+          <div class="add-server-step-heading">
+            <button class="ghost small-btn" type="button" data-add-server-back>← Back</button>
+            <div><h3>Direct connection · no Crafty</h3><p>Connect the plugin API and optionally the maps for this server.</p></div>
+          </div>
+
+          <div class="manual-server-form-grid">
+            <label class="manual-field-wide"><span>Server name</span><input id="wizardManualName" maxlength="80" placeholder="Remote server"></label>
+            <label class="manual-field-wide connection-address-field"><span>Plugin API address</span><input id="wizardManualPluginUrl" type="text" inputmode="url" placeholder="192.168.1.50:8765 or https://server.example.com"><small>Accepts a direct IP address, host name, or complete URL.</small></label>
+            <label class="manual-field-wide"><span>Plugin token</span><input id="wizardManualPluginToken" type="password" placeholder="Token from player-panel-fabric.properties" autocomplete="new-password"></label>
+            <label class="manual-toggle manual-field-wide"><input id="wizardManualVerifyTls" type="checkbox" checked><span><strong>Verify plugin TLS</strong><small>Disable only for internal or self-signed certificates.</small></span></label>
+
+            <fieldset class="manual-optional-group manual-field-wide squaremap-setup-group">
+              <legend>squaremap 2D <em>optional · recommended for mobile</em></legend>
+              <label><span>squaremap address</span><input id="wizardManualSquareMapUrl" type="text" inputmode="url" placeholder="192.168.1.50:8110 or https://map2d.example.com"></label>
+              <label><span>squaremap world</span><input id="wizardManualSquareMapWorld" value="minecraft:overworld"></label>
+              <small class="manual-group-help">Entering a URL automatically enables squaremap for the 2D selector and thumbnails.</small>
+            </fieldset>
+
+            <fieldset class="manual-optional-group manual-field-wide">
+              <legend>BlueMap 3D <em>optional</em></legend>
+              <label><span>BlueMap address</span><input id="wizardManualBlueMapUrl" type="text" inputmode="url" placeholder="192.168.1.50:8100 or https://map.example.com"></label>
+              <label><span>Preferred BlueMap ID</span><input id="wizardManualBlueMapId" placeholder="world"></label>
+            </fieldset>
+          </div>
+
+          <div id="wizardManualStatus" class="wizard-status muted">The server will be created as a manual profile.</div>
+          <footer class="add-server-wizard-footer">
+            <button class="ghost" type="button" data-add-server-cancel>Cancel</button>
+            <button id="wizardCreateManualBtn" class="secondary" type="button">Create and test</button>
+          </footer>
+        </div>
+      </form>
+    </dialog>
+
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+      <button class="mobile-nav-btn nav-btn active" data-view="dashboard" type="button"><span aria-hidden="true">⌂</span><small>Dashboard</small></button>
+      <div class="nav-menu mobile-nav-menu" data-nav-group="server">
+        <button class="mobile-nav-btn nav-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="serverMobileMenu"><span aria-hidden="true">▣</span><small>Server</small></button>
+        <div id="serverMobileMenu" class="nav-dropdown" role="menu">
+          <button class="nav-dropdown-item nav-btn" data-view="players" type="button" role="menuitem"><span>Players</span><small>Online players and whitelist</small></button>
+          <button class="nav-dropdown-item nav-btn" data-view="places" type="button" role="menuitem"><span>Teleport Locations</span><small>Destinos guardados</small></button>
+          <button class="nav-dropdown-item nav-btn hidden" data-view="bluemap" data-bluemap-nav type="button" role="menuitem"><span>BlueMap</span><small>Web map</small></button>
+          <button class="nav-dropdown-item nav-btn hidden" data-view="server" data-crafty-nav type="button" role="menuitem"><span>Management & Status</span><small>Control and metrics</small></button>
+        </div>
+      </div>
+      <div class="nav-menu mobile-nav-menu" data-nav-group="system">
+        <button class="mobile-nav-btn nav-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="systemMobileMenu"><span aria-hidden="true">⚙</span><small>System</small></button>
+        <div id="systemMobileMenu" class="nav-dropdown" role="menu">
+          <button class="nav-dropdown-item nav-btn system-settings-nav" data-view="servers" type="button" role="menuitem"><span>Servers</span><small>Add and edit profiles</small></button>
+          <button class="nav-dropdown-item nav-btn system-settings-nav" data-view="crafty-connections" type="button" role="menuitem"><span>Crafty Installations</span><small>API and credentials</small></button>
+          <button class="nav-dropdown-item nav-btn" data-view="users" type="button" role="menuitem"><span>Accounts</span><small>Profile and users</small></button>
+          <button class="nav-dropdown-item nav-btn system-settings-nav" data-view="system" type="button" role="menuitem"><span>System Settings</span><small>Maintenance and backups</small></button>
+          <button class="nav-dropdown-item nav-btn" data-view="history" type="button" role="menuitem"><span>History / Log</span><small>Actions and sessions</small></button>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div id="offlineBanner" class="app-banner offline-banner hidden" role="status"><span>Offline. Some features are unavailable.</span><button id="retryConnectionBtn" class="ghost small-btn" type="button">Retry</button></div>
+  <div id="updateBanner" class="app-banner update-banner hidden" role="status"><span>A new Player Panel version is available.</span><div><button id="dismissUpdateBtn" class="ghost small-btn" type="button">Later</button><button id="applyUpdateBtn" class="primary small-btn" type="button">Update now</button></div></div>
+
+  <dialog id="bulkActionsDialog" class="bulk-dialog">
+    <button id="closeBulkDialog" class="dialog-close" type="button" aria-label="Close">×</button>
+    <div class="bulk-dialog-header">
+      <span class="eyebrow">Server · Players</span>
+      <h2>Bulk Actions</h2>
+      <p>Apply an action to multiple online players.</p>
+    </div>
+    <div class="bulk-selection-toolbar">
+      <strong id="bulkSelectedCount">0 selected</strong>
+      <div class="mini-actions">
+        <button id="bulkSelectAllBtn" class="ghost small-btn" type="button">Select all</button>
+        <button id="bulkClearBtn" class="ghost small-btn" type="button">Clear</button>
+      </div>
+    </div>
+    <div id="bulkPlayers" class="check-list bulk-dialog-players"></div>
+    <div class="bulk-controls bulk-dialog-controls">
+      <label><span>Action</span><select id="bulkAction">
+        <option value="heal">Heal</option><option value="feed">Feed</option><option value="gamemode">Change game mode</option>
+        <option value="teleport">Teleport</option><option value="kick">Kick</option>
+      </select></label>
+      <label id="bulkGamemodeWrap" class="conditional-field hidden"><span>Modo</span><select id="bulkGamemode">
+        <option>SURVIVAL</option><option>CREATIVE</option><option>ADVENTURE</option><option>SPECTATOR</option>
+      </select></label>
+      <label id="bulkPlaceWrap" class="conditional-field hidden"><span>Location</span><select id="bulkPlace"></select></label>
+      <label id="bulkReasonWrap" class="conditional-field hidden"><span>Reason</span><input id="bulkReason" maxlength="200" placeholder="Kick reason"></label>
+    </div>
+    <p id="bulkResult" class="muted bulk-result" role="status"></p>
+    <div class="button-row bulk-dialog-actions">
+      <button id="cancelBulkBtn" class="ghost" type="button">Cancel</button>
+      <button id="runBulkBtn" class="primary" type="button">Run action</button>
+    </div>
+  </dialog>
+
+  <dialog id="itemDialog" class="item-dialog">
+    <button id="closeItemDialog" class="dialog-close" aria-label="Close">×</button>
+    <div id="itemDialogContent"></div>
+  </dialog>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="/app.js?v=1.10.19" defer></script>
+</body>
+</html>

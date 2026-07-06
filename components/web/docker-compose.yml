@@ -1,0 +1,75 @@
+services:
+  player-panel-web:
+    build: .
+    container_name: "${PLAYER_PANEL_CONTAINER_NAME:-player-panel-web}"
+    restart: unless-stopped
+    environment:
+      PLAYER_PANEL_API_URL: "${PLAYER_PANEL_API_URL}"
+      PLAYER_PANEL_API_TOKEN_FILE: /run/secrets/player_panel_api_token
+      ADMIN_PASSWORD_FILE: /run/secrets/admin_password
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      CRAFTY_API_URL: "${CRAFTY_API_URL}"
+      CRAFTY_USERNAME_FILE: /run/secrets/crafty_username
+      CRAFTY_PASSWORD_FILE: /run/secrets/crafty_password
+      CRAFTY_API_TOKEN_FILE: /run/secrets/crafty_api_token
+      CRAFTY_SERVER_ID: "${CRAFTY_SERVER_ID}"
+      CRAFTY_PANEL_URL: "${CRAFTY_PANEL_URL:-}"
+      CRAFTY_VERIFY_TLS: "${CRAFTY_VERIFY_TLS:-false}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+      TRUST_PROXY: "${TRUST_PROXY:-false}"
+      TRUSTED_PROXY_CIDRS: "${TRUSTED_PROXY_CIDRS:-}"
+      DOCKER_HOST_GATEWAY_NAME: host.docker.internal
+      TZ: "${TZ:-UTC}"
+      MINECRAFT_ASSET_VERSION: "${MINECRAFT_ASSET_VERSION:-26.1.2}"
+      MINECRAFT_AUTH_MODE: "${MINECRAFT_AUTH_MODE:-online}"
+      PLAYER_PANEL_SETUP_MODE: "${PLAYER_PANEL_SETUP_MODE:-choose}"
+      PLAYER_PANEL_SQUAREMAP_URL: "${PLAYER_PANEL_SQUAREMAP_URL:-}"
+      PLAYER_PANEL_SQUAREMAP_WORLD_ID: "${PLAYER_PANEL_SQUAREMAP_WORLD_ID:-minecraft:overworld}"
+      MEDIA_CACHE_TTL_SECONDS: "604800"
+      MONITOR_INTERVAL_SECONDS: "5"
+      API_DOWN_FAILURE_THRESHOLD: "3"
+      API_DOWN_GRACE_SECONDS: "10"
+      UPSTREAM_STALE_MAX_SECONDS: "120"
+      UPSTREAM_RATE_LIMIT_FALLBACK_SECONDS: "5"
+      PLUGIN_EVENT_INTERVAL_SECONDS: "2"
+      LIVE_EVENT_HEARTBEAT_SECONDS: "15"
+      METRICS_SAMPLE_INTERVAL_SECONDS: "60"
+      METRICS_RETENTION_DAYS: "30"
+      LOW_FOOD_THRESHOLD: "6"
+      VAPID_SUBJECT: "${VAPID_SUBJECT:-mailto:admin@example.com}"
+      PUSH_TTL_SECONDS: "3600"
+      PUSH_TIMEOUT_SECONDS: "10"
+    secrets:
+      - player_panel_api_token
+      - admin_password
+      - session_secret
+      - crafty_username
+      - crafty_password
+      - crafty_api_token
+    volumes:
+      - ./data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${PLAYER_PANEL_BIND_ADDRESS:-127.0.0.1}:${PLAYER_PANEL_WEB_PORT:-8766}:8080"
+    networks:
+      - player-panel-net
+
+secrets:
+  player_panel_api_token:
+    file: ./secrets/player_panel_api_token.txt
+  admin_password:
+    file: ./secrets/admin_password.txt
+  session_secret:
+    file: ./secrets/session_secret.txt
+  crafty_username:
+    file: ./secrets/crafty_username.txt
+  crafty_password:
+    file: ./secrets/crafty_password.txt
+  crafty_api_token:
+    file: ./secrets/crafty_api_token.txt
+
+networks:
+  player-panel-net:
+    name: "${PLAYER_PANEL_NETWORK:-player-panel-net}"
+    external: true

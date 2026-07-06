@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+state="${PLAYER_PANEL_TEST_STATE:?}"
+server="11111111-2222-3333-4444-555555555555"
+mkdir -p "$state/crafty/servers/$server/mods"
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  version)
+    if [[ " ${*:-} " == *" --format "* ]]; then echo '29.5.3'; fi
+    exit 0
+    ;;
+  ps)
+    if [[ -f "$state/crafty_present" ]]; then echo crafty-test; fi
+    ;;
+  inspect)
+    if [[ "${1:-}" == -f || "${1:-}" == --format ]]; then
+      format="$2"; target="$3"
+      [[ -f "$state/crafty_present" ]] || exit 1
+      if [[ "$format" == *Config.Image* ]]; then echo 'arcadiatechnology/crafty-4:latest';
+      elif [[ "$format" == *State.Running* ]]; then echo true;
+      else echo '{"player-panel-net":{}}'; fi
+      exit 0
+    fi
+    target="${1:-}"
+    if [[ "$target" == crafty-test ]]; then [[ -f "$state/crafty_present" ]]; else exit 0; fi
+    ;;
+  start) touch "$state/crafty_present" ;;
+  logs) exit 0 ;;
+  exec)
+    [[ "${1:-}" == -i ]] && shift
+    container="$1"; shift
+    [[ -f "$state/crafty_present" ]] || exit 1
+    joined="$*"
+    if [[ "$joined" == "test -d /crafty/servers" ]]; then exit 0; fi
+    if [[ "$joined" == *"python3 -"* ]]; then
+      if [[ -f "$state/unknown_server_type" ]]; then
+        printf '%s\tClean Test Server\tUnknown\t0\n' "$server"
+      else
+        printf '%s\tClean Test Server\tFabric\t0\n' "$server"
+      fi
+      exit 0
+    fi
+    if [[ "$joined" == test\ -f* ]]; then
+      path="${joined#test -f }"; path="${path//\'/}"
+      [[ -f "$state/crafty${path#/crafty}" ]]; exit
+    fi
+    if [[ "$joined" == *"mkdir -p"*"$server"* ]]; then
+      mkdir -p \
+        "$state/crafty/servers/$server/mods" \
+        "$state/crafty/servers/$server/config" \
+        "$state/crafty/servers/$server/player-panel-backups"
+      touch "$state/server_directories_prepared"
+      exit 0
+    fi
+    if [[ "$joined" == *"test -s"*"player-panel-fabric.properties"* ]]; then
+      [[ -s "$state/crafty/servers/$server/mods/player-panel-1.1.7-fabric26.1.2.jar" ]]
+      [[ -s "$state/crafty/servers/$server/config/player-panel-fabric.properties" ]]
+      exit 0
+    fi
+    exit 0
+    ;;
+  cp)
+    src="$1"; dst="$2"
+    if [[ "$src" == *:* ]]; then
+      path="${src#*:}"; cp "$state/crafty${path#/crafty}" "$dst"
+    elif [[ "$dst" == *:* ]]; then
+      path="${dst#*:}"; target="$state/crafty${path#/crafty}"
+      [[ -d "$(dirname "$target")" ]] || { echo "Error response from daemon: Could not find the file $(dirname "$path") in container" >&2; exit 1; }
+      cp "$src" "$target"
+    else cp "$src" "$dst"; fi
+    ;;
+  network)
+    sub="${1:-}"
+    [[ "$sub" == create ]] && touch "$state/network_present"
+    if [[ "$sub" == inspect ]]; then [[ -f "$state/network_present" ]]; fi
+    ;;
+  pull)
+    echo "Pulling from ${1:-unknown}"
+    touch "$state/docker_pull_used"
+    printf '%s\n' "${1:-}" > "$state/docker_pull_image"
+    exit 0
+    ;;
+  compose)
+    args=("$@")
+    if [[ " ${args[*]} " == *' version '* ]]; then
+      [[ " ${args[*]} " == *' --short '* ]] && echo '2.40.0'
+      exit 0
+    fi
+    for a in "${args[@]}"; do
+      if [[ "$a" == up ]]; then touch "$state/crafty_present"; fi
+    done
+    if [[ " ${args[*]} " == *' config --images '* ]]; then echo player-panel-test-image; fi
+    exit 0
+    ;;
+  run) echo 1000 ;;
+  *) exit 0 ;;
+esac
