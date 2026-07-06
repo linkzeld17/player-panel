@@ -1,4 +1,8 @@
-# Player Panel
+<p align="center">
+  <img src="favicon.svg" alt="Player Panel logo" width="128">
+</p>
+
+<h1 align="center">Player Panel</h1>
 
 Player Panel is a self-hosted web control panel for Minecraft Java servers. It combines a responsive web application, a Fabric server mod, optional Crafty Controller integration, and optional BlueMap/squaremap map pickers.
 
