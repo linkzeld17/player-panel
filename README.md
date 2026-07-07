@@ -3,7 +3,9 @@
 </p>
 
 <h1 align="center">Player Panel</h1>
-
+<p align="center">
+  <img src="/screenshots/00-features.png" alt="Features" width="512">
+</p>
 Player Panel is a self-hosted web control panel for Minecraft Java servers. It combines a responsive web application, a Fabric server mod, optional Crafty Controller integration, and optional BlueMap/squaremap map pickers.
 
 > **Release status:** Beta. Back up your server and Player Panel data before upgrading.
@@ -27,6 +29,151 @@ Because this is the only planned public release, pull requests and support reque
 - Optional Crafty integration for discovery, start/stop/restart, logs, status, and backups.
 - Optional BlueMap 3D and squaremap 2D integrations.
 - PWA support for desktop, Android, iPhone, and iPad.
+## Screenshots
+
+### Dashboard
+
+<p align="center">
+  <img
+    src="screenshots/01-dashboard-dark.png"
+    alt="Player Panel dashboard in dark mode"
+    width="100%"
+  >
+</p>
+
+The dashboard provides a real-time overview of the selected Minecraft server, including world status, time and weather controls, online players, active alerts, recent sessions, actions, and plugin metrics.
+
+### Light and dark modes
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img
+        src="screenshots/01-dashboard-dark.png"
+        alt="Player Panel dark mode"
+        width="100%"
+      >
+      <br>
+      <strong>Dark mode</strong>
+    </td>
+    <td width="50%" align="center">
+      <img
+        src="screenshots/02-dashboard-light.png"
+        alt="Player Panel light mode"
+        width="100%"
+      >
+      <br>
+      <strong>Light mode</strong>
+    </td>
+  </tr>
+</table>
+
+### Player management
+
+<p align="center">
+  <img
+    src="screenshots/03-player-details.png"
+    alt="Player details, inventory, whitelist, teleport and moderation controls"
+    width="100%"
+  >
+</p>
+
+Player Panel provides player profiles, live inventory viewing, health and food information, game mode controls, teleportation, whitelist management, operator permissions, kicks, bans, and other moderation actions.
+
+### Saved locations and teleportation
+
+<p align="center">
+  <img
+    src="screenshots/04-teleport-locatios.png"
+    alt="Saved Minecraft locations and teleport shortcuts"
+    width="100%"
+  >
+</p>
+
+Save reusable teleport destinations with world coordinates, orientation, map thumbnails, and direct access to BlueMap or squaremap coordinate selection.
+
+### Map-based coordinate selection
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img
+        src="screenshots/05-bluemap.png"
+        alt="Exact coordinate selection using BlueMap 3D"
+        width="100%"
+      >
+      <br>
+      <strong>BlueMap 3D</strong>
+      <br>
+      Select an exact Minecraft block and send its X, Y and Z coordinates directly to Player Panel.
+    </td>
+    <td width="50%" align="center">
+      <img
+        src="screenshots/06-squeremap.png"
+        alt="Coordinate selection using squaremap 2D"
+        width="100%"
+      >
+      <br>
+      <strong>squaremap 2D</strong>
+      <br>
+      Choose a destination from a lightweight two-dimensional map with safe Y-coordinate calculation.
+    </td>
+  </tr>
+</table>
+
+### Server configuration
+
+<p align="center">
+  <img
+    src="screenshots/07-server-setup.png"
+    alt="Player Panel server setup wizard"
+    width="100%"
+  >
+</p>
+
+Servers can be added through a direct connection to the Player Panel Fabric API or imported from an existing Crafty Controller installation.
+
+### Crafty Controller integration
+
+<p align="center">
+  <img
+    src="screenshots/08-crafty-integration.png"
+    alt="Crafty Controller server management, console and backups"
+    width="100%"
+  >
+</p>
+
+The optional Crafty Controller integration provides server discovery, status and metrics, start, stop and restart actions, recent console output, and backup management.
+
+### Responsive mobile interface
+
+<table>
+  <tr>
+    <td width="68%" valign="middle">
+      <strong>Desktop and mobile support</strong>
+      <br><br>
+      Player Panel includes a responsive interface designed for desktop computers, tablets, Android devices, iPhone and iPad.
+      <br><br>
+      The mobile layout provides:
+      <br><br>
+      • touch-friendly navigation;<br>
+      • compact server selection;<br>
+      • responsive dashboard cards;<br>
+      • world time and weather controls;<br>
+      • alerts and server status information;<br>
+      • PWA installation support.
+    </td>
+    <td width="32%" align="center">
+      <img
+        src="screenshots/09-mobile-view.png"
+        alt="Player Panel responsive mobile interface"
+        width="300"
+      >
+      <br>
+      <strong>Mobile dashboard</strong>
+    </td>
+  </tr>
+</table>
 
 ## Included versions
 
