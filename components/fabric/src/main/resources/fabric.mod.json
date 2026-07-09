@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "player-panel",
+  "version": "${version}",
+  "name": "Player Panel",
+  "description": "Fabric server adapter for Player Panel.",
+  "authors": ["Player Panel"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.playerpanel.fabric.PlayerPanelFabric"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
+    "fabric-api": ">=0.153.0"
+  }
+}

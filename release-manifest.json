@@ -12,7 +12,10 @@
       "version": "1.1.7",
       "minecraft": "26.1.2",
       "path": "components/fabric/player-panel-1.1.7-fabric26.1.2.jar",
-      "requiresFabricApi": ">=0.153.0"
+      "requiresFabricApi": ">=0.153.0",
+      "sourcePath": "components/fabric/src/main/java",
+      "resourcesPath": "components/fabric/src/main/resources",
+      "buildFile": "components/fabric/build.gradle"
     },
     "fabricApiDownload": {
       "included": false,
